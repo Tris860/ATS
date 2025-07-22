@@ -1,0 +1,221 @@
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    h1 {
+        font-size: 28px; /* Smaller heading for mobile */
+        margin-bottom: 20px;
+    }
+
+    h1 svg {
+        width: 28px;
+        height: 28px;
+        margin-right: 8px;
+    }
+
+    .user-email-display {
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    /* Stack navigation buttons on small screens */
+    .main-nav {
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px;
+        margin-bottom: 20px;
+    }
+
+    .nav-button {
+        width: 100%; /* Full width buttons */
+        padding: 12px 15px;
+        font-size: 15px;
+    }
+
+    /* Day selection buttons to wrap more aggressively */
+    .day-selection {
+        padding: 10px;
+        gap: 5px;
+    }
+
+    .day-button {
+        padding: 6px 10px;
+        font-size: 13px;
+        min-width: unset; /* Remove min-width to allow more flexible wrapping */
+        flex-basis: calc(33.33% - 5px); /* 3 columns on small phones */
+    }
+
+    /* Forms: single column layout */
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .add-period-form {
+        padding: 15px;
+        margin-bottom: 30px;
+    }
+
+    .add-period-form h2 {
+        font-size: 20px;
+        margin-bottom: 12px;
+    }
+
+    .add-button {
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+
+    /* Table responsiveness - Card-like layout */
+    .table-wrapper {
+        overflow-x: hidden; /* Hide horizontal scroll on small screens */
+    }
+
+    table {
+        width: 100%; /* Ensure table takes full width */
+        display: block; /* Make table behave like a block element */
+    }
+
+    thead {
+        display: none; /* Hide table header on small screens */
+    }
+
+    tbody, tr {
+        display: block; /* Make tbody and tr behave like block elements */
+        width: 100%; /* Ensure they take full width */
+    }
+
+    tbody tr {
+        margin-bottom: 15px; /* Add space between "cards" */
+        border: 1px solid var(--color-gray-200); /* Add border to each "card" */
+        border-radius: 8px; /* Rounded corners for "cards" */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Subtle shadow for "cards" */
+        padding: 10px; /* Padding inside each "card" */
+    }
+
+    td {
+        display: flex; /* Make td a flex container */
+        justify-content: space-between; /* Space out content and label */
+        align-items: center; /* Vertically align items */
+        padding: 8px 0; /* Smaller vertical padding */
+        border-bottom: 1px dashed var(--color-gray-200); /* Dashed separator between fields */
+        white-space: normal; /* Allow text to wrap */
+    }
+
+    td:last-child {
+        border-bottom: none; /* No border on the last td in a row */
+    }
+
+    td::before {
+        content: attr(data-label); /* Use data-label for the pseudo-element content */
+        font-weight: 600; /* Make label bold */
+        color: var(--color-gray-600); /* Color for the label */
+        flex-shrink: 0; /* Prevent label from shrinking */
+        margin-right: 10px; /* Space between label and value */
+        min-width: 80px; /* Give labels a minimum width */
+        text-align: left;
+    }
+
+    /* Specific adjustments for cells that don't need a label or have special layout */
+    td:nth-child(1)::before { content: 'Name'; }
+    td:nth-child(2)::before { content: 'Day'; }
+    td:nth-child(3)::before { content: 'Start'; }
+    td:nth-child(4)::before { content: 'End'; }
+    td:nth-child(5)::before { content: 'Status'; justify-content: flex-start; } /* Align status label to start */
+    td:nth-child(6)::before { content: ''; display: none; } /* Hide label for actions column */
+    td:nth-child(6) {
+        justify-content: center; /* Center action buttons */
+        padding-top: 15px; /* More space above buttons */
+    }
+
+    /* Input fields within table cells for editing in card view */
+    .edit-input {
+        flex-grow: 1; /* Allow input to take remaining space */
+        padding: 6px;
+        font-size: 14px;
+    }
+
+    /* Adjust action button sizes */
+    .action-button svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Adjust toggle switch size if necessary, though current size is usually fine */
+    .toggle-switch-background {
+        width: 38px; /* Slightly smaller width */
+        height: 20px; /* Slightly smaller height */
+    }
+
+    .toggle-switch-handle {
+        width: 16px; /* Smaller handle */
+        height: 16px; /* Smaller handle */
+        top: 2px;
+        left: 2px;
+    }
+
+    .toggle-switch-checkbox:checked + .toggle-switch-background .toggle-switch-handle {
+        transform: translateX(18px); /* Adjust translation for smaller switch */
+    }
+
+    .toggle-status-icon {
+        font-size: 12px;
+        margin-left: 8px;
+    }
+    .toggle-status-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Modal adjustments */
+    .custom-modal-content {
+        padding: 20px;
+        width: 95%; /* Take more width on small screens */
+    }
+    .custom-modal-content h3 {
+        font-size: 20px;
+    }
+    .custom-modal-content p {
+        font-size: 14px;
+    }
+    .modal-button {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+
+    /* Manual section adjustments */
+    .manual-control-group {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    .manual-control-group h3 {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+    .ring-bell-button {
+        padding: 12px 25px;
+        font-size: 18px;
+        margin-bottom: 20px;
+    }
+    .hard-switch-toggle-group {
+        padding: 12px;
+    }
+    .hard-switch-toggle-group label {
+        font-size: 14px;
+    }
+    .section-content {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .day-button {
+        flex-basis: calc(50% - 4px); /* 2 columns on very small phones */
+    }
+}

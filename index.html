@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+  <link rel="icon" type="image/icon" href="media/logo.png">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Login page</title>
+	<link rel="stylesheet" type="text/css" href="css/index.css">
+</head>
+<body>
+<div class="wrapper" id="login">
+    <section class="form signup" id="LoginForm"> 
+      <h1>ATS</h1>
+      <h2>Log into your account🔔</h2>
+      <hr>
+      <form action=""  method="POST" enctype="multipart/form-data" autocomplete="off">
+        <div class="MsgBox"></div>
+        <div class="field input">
+          <label>Email Address</label>
+          <input type="email" name="email" placeholder="Enter your email" required>
+        </div>
+        <div class="field input">
+          <label>Password</label>
+          <input type="password" name="password" id="password" placeholder="Enter new password" required>
+        </div>
+        <div class="field button">
+          <input type="submit" name="submit" value="Log in">
+        </div>
+        <div class="link">Don't you have account? <a id="SignUptoggle">Create account</a></div>
+        <div class="copyright">Developed by <span>Tris</span> Tech Hub</div>
+      </form>
+    </section>
+</div>
+<div class="wrapper" id="signup">
+  <section class="form signup" id="signUpForm"> 
+    <h1>ATS</h1>
+    <h2>Create your account🔔</h2>
+    <hr>
+    <form action=""  method="POST" enctype="multipart/form-data" autocomplete="off">
+      <div class="MsgBox"></div>
+      <div class="field input">
+        <label>Email Address</label>
+        <input type="email" name="email" placeholder="Enter your email" required>
+      </div>
+      <div class="field input">
+        <label>Password</label>
+        <input type="password" name="password" id="password" placeholder="Enter new password" required>
+      </div>
+      <div class="field input">
+        <label>Confirm Password</label>
+        <input type="password" name="confirm_password" id="password" placeholder="Confirm password" required>
+      </div>
+      <div class="field button">
+        <input type="submit" name="submit" value="Sign Up">
+      </div>
+      <div class="link">Already have an account? <a id="LogIntoggle">Login now</a></div>
+      <div class="copyright">Developed by <span>Tris</span> Tech Hub</div>
+    </form>
+    
+  </section>
+</div>
+<script src="javascript/api/serverConnector.js"></script>
+<script src="javascript/index.js"></script>
+</body>
+</html>

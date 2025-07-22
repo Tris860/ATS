@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Timetable</title>
+    <style>
+        :root {
+            /* Primary Colors */
+            --color-indigo-700: #4338ca;
+            --color-indigo-500: #6366f1;
+            --color-blue-600: #2563eb;
+            --color-blue-700: #1d4ed8;
+            --color-blue-500: #3b82f6;
+            --color-blue-400: #60a5fa;
+            --color-blue-300: #93c5fd;
+            --color-blue-50: #eff6ff;
+            --color-blue-200: #bfdbfe;
+            --color-red-600: #dc2626;
+            --color-red-700: #b91c1c;
+            --color-red-500: #ef4444;
+            --color-green-600: #16a34a;
+            --color-green-900: #14532d;
+            --color-green-500: #22c55e;
+
+            /* Neutral Colors */
+            --color-white: #fff;
+            --color-gray-50: #f9fafb;
+            --color-gray-100: #f3f4f6;
+            --color-gray-200: #e5e7eb;
+            --color-gray-300: #d1d5db;
+            --color-gray-500: #6b7280;
+            --color-gray-600: #4b5563;
+            --color-gray-700: #374151;
+            --color-gray-800: #333; /* Adjusted from original for body text */
+            --color-gray-900: #1f2937; /* Adjusted from original for strong text */
+            --color-e0e0e0: #e0e0e0; /* Custom border color */
+            --color-black-transparent-10: rgba(0, 0, 0, 0.1);
+            --color-black-transparent-06: rgba(0, 0, 0, 0.06);
+            --color-black-transparent-03: rgba(0, 0, 0, 0.3);
+            --color-black-transparent-006: rgba(0, 0, 0, 0.06); /* for shadow-inner */
+            --color-black-transparent-060: rgba(0, 0, 0, 0.6); /* for modal overlay */
+            --color-blue-transparent-50: rgba(96, 165, 250, 0.5); /* for focus ring */
+
+            /* New color for deactivated rows */
+            --color-deactivated-bg: #f0f0f0; /* Light gray */
+            --color-deactivated-text: #a0a0a0; /* Darker gray for text */
+
+            /* Day selection button colors */
+            --color-day-button-bg: #e0e7ff; /* Light indigo */
+            --color-day-button-text: #4338ca; /* Indigo-700 */
+            --color-day-button-hover-bg: #c7d2fe; /* Lighter indigo on hover */
+            --color-day-button-active-bg: var(--color-indigo-700);
+            --color-day-button-active-text: var(--color-white);
+
+            /* Navigation button colors */
+            --color-nav-button-bg: var(--color-gray-100);
+            --color-nav-button-text: var(--color-indigo-700);
+            --color-nav-button-hover-bg: var(--color-indigo-50);
+            --color-nav-button-active-bg: var(--color-indigo-700);
+            --color-nav-button-active-text: var(--color-white);
+
+            /* Settings section specific colors */
+            --color-settings-bg: #f8faff;
+            --color-settings-border: #dbeafe;
+        }
+
+        /* Basic Reset & Font */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(to bottom right, var(--color-blue-50), var(--color-e8eaf6, #e8eaf6)); /* from-blue-50 to-indigo-100 */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for better content flow */
+            padding: 20px;
+            box-sizing: border-box;
+            color: var(--color-gray-800);
+        }
+
+        .container {
+            max-width: 960px;
+            width: 100%;
+            background-color: var(--color-white);
+            box-shadow: 0 10px 25px var(--color-black-transparent-10), 0 5px 10px var(--color-black-transparent-06); /* shadow-2xl */
+            border-radius: 12px; /* rounded-xl */
+            padding: 32px; /* p-8 */
+            border: 1px solid var(--color-e0e0e0); /* border-gray-200 */
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 36px; /* text-4xl */
+            font-weight: 800; /* font-extrabold */
+            text-align: center;
+            color: var(--color-indigo-700); /* text-indigo-700 */
+            margin-bottom: 32px; /* mb-8 */
+            letter-spacing: -0.025em; /* tracking-tight */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 svg {
+            margin-right: 12px; /* mr-3 */
+            color: var(--color-indigo-500); /* text-indigo-500 */
+        }
+
+        /* User Email Display */
+        .user-email-display {
+            text-align: right; /* Align to right */
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: var(--color-gray-600);
+        }
+        .user-email-display span {
+            font-weight: 600;
+            color: var(--color-gray-800);
+        }
+
+        /* Main Navigation Menu */
+        .main-nav {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            background-color: var(--color-nav-button-bg);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .nav-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background-color: transparent;
+            color: var(--color-nav-button-text);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .nav-button:hover {
+            background-color: var(--color-nav-button-hover-bg);
+        }
+
+        .nav-button.active {
+            background-color: var(--color-nav-button-active-bg);
+            color: var(--color-nav-button-active-text);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Section Display */
+        .section {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .hidden-section {
+            display: none; /* Use display: none for complete hiding */
+            opacity: 0;
+            height: 0;
+            overflow: hidden;
+        }
+
+        .active-section {
+            display: block;
+            opacity: 1;
+            height: auto;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--color-blue-700);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .section-content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--color-gray-700);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* Day Selection */
+        .day-selection {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px; /* gap-2 */
+            margin-bottom: 32px; /* mb-8 */
+            padding: 16px;
+            background-color: var(--color-gray-50);
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .day-button {
+            padding: 8px 16px; /* px-4 py-2 */
+            border-radius: 6px; /* rounded-md */
+            border: 1px solid var(--color-indigo-500);
+            background-color: var(--color-day-button-bg);
+            color: var(--color-day-button-text);
+            font-weight: 600; /* font-semibold */
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+            flex-grow: 1; /* Allow buttons to grow */
+            min-width: 80px; /* Minimum width for smaller screens */
+            text-align: center;
+        }
+
+        .day-button:hover {
+            background-color: var(--color-day-button-hover-bg);
+        }
+
+        .day-button.active {
+            background-color: var(--color-day-button-active-bg);
+            color: var(--color-day-button-active-text);
+            border-color: var(--color-day-button-active-bg);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Add New Period Form */
+        .add-period-form {
+            margin-bottom: 40px; /* mb-10 */
+            padding: 24px; /* p-6 */
+            background-color: var(--color-blue-50); /* bg-blue-50 */
+            border-radius: 8px; /* rounded-lg */
+            box-shadow: inset 0 2px 4px var(--color-black-transparent-006); /* shadow-inner */
+            border: 1px solid var(--color-blue-200); /* border-blue-200 */
+        }
+
+        .add-period-form h2 {
+            font-size: 24px; /* text-2xl */
+            font-weight: 700; /* font-bold */
+            color: var(--color-blue-700); /* text-blue-700 */
+            margin-bottom: 16px; /* mb-4 */
+            display: flex;
+            align-items: center;
+        }
+
+        .add-period-form h2 svg {
+            margin-right: 8px; /* mr-2 */
+            color: var(--color-blue-500); /* text-blue-500 */
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px; /* gap-4 */
+            align-items: flex-end;
+        }
+
+        @media (min-width: 640px) { /* sm: */
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) { /* lg: */
+            .form-grid {
+                grid-template-columns: repeat(3, 1fr); /* Adjusted for 3 columns now */
+            }
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-field label {
+            font-size: 14px; /* text-sm */
+            font-weight: 500; /* font-medium */
+            color: var(--color-gray-700); /* text-gray-700 */
+            margin-bottom: 4px; /* mb-1 */
+        }
+
+        .form-field input, .form-field select { /* Added select for day dropdown */
+            padding: 12px; /* p-3 */
+            border: 1px solid var(--color-gray-300); /* border-gray-300 */
+            border-radius: 8px; /* rounded-lg */
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-field input:focus, .form-field select:focus {
+            border-color: transparent;
+            box-shadow: 0 0 0 2px var(--color-blue-400); /* focus:ring-2 focus:ring-blue-400 */
+        }
+
+        .add-button {
+            width: 100%;
+            background-color: var(--color-blue-600); /* bg-blue-600 */
+            color: var(--color-white);
+            font-weight: 700; /* font-bold */
+            padding: 12px 24px; /* py-3 px-6 */
+            border-radius: 8px; /* rounded-lg */
+            box-shadow: 0 4px 6px var(--color-black-transparent-10); /* shadow-md */
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px; /* text-lg */
+            cursor: pointer;
+            border: none;
+        }
+
+        .add-button:hover {
+            background-color: var(--color-blue-700); /* hover:bg-blue-700 */
+            transform: scale(1.05);
+        }
+
+        .add-button svg {
+            margin-right: 8px; /* mr-2 */
+        }
+
+        /* Timetable Table */
+        .table-wrapper {
+            overflow-x: auto; /* Keep for larger screens, will be overridden for smaller */
+            border-radius: 8px; /* rounded-lg */
+            box-shadow: 0 4px 10px var(--color-black-transparent-10); /* shadow-lg */
+            border: 1px solid var(--color-e0e0e0); /* border-gray-200 */
+        }
+
+        table {
+            min-width: 100%;
+            border-collapse: collapse;
+            background-color: var(--color-white);
+        }
+
+        thead {
+            background-color: var(--color-gray-50); /* bg-gray-50 */
+        }
+
+        th {
+            padding: 12px 24px; /* px-6 py-3 */
+            text-align: left;
+            font-size: 12px; /* text-xs */
+            font-weight: 500; /* font-medium */
+            color: var(--color-gray-500); /* text-gray-500 */
+            text-transform: uppercase;
+            letter-spacing: 0.05em; /* tracking-wider */
+            border-bottom: 1px solid var(--color-gray-200); /* divide-y divide-gray-200 */
+        }
+
+        th:nth-child(4), th:nth-child(5) {
+            text-align: center;
+        }
+
+        tbody tr {
+            transition: background-color 0.15s ease-in-out;
+        }
+
+        tbody tr:hover {
+            background-color: var(--color-gray-50); /* hover:bg-gray-50 */
+        }
+
+        /* New style for deactivated rows */
+        tbody tr.deactivated-row {
+            background-color: var(--color-deactivated-bg);
+            color: var(--color-deactivated-text);
+        }
+
+        tbody tr.deactivated-row .period-name,
+        tbody tr.deactivated-row .period-start-time,
+        tbody tr.deactivated-row .period-end-time {
+            color: var(--color-deactivated-text); /* Ensure text color is also gray */
+        }
+
+
+        td {
+            padding: 16px 24px; /* px-6 py-4 */
+            white-space: nowrap;
+            border-bottom: 1px solid var(--color-gray-200); /* divide-y divide-gray-200 */
+        }
+
+        td:nth-child(4), td:nth-child(5) {
+            text-align: center;
+        }
+
+        .loading-message {
+            padding: 16px 24px;
+            text-align: center;
+            color: var(--color-gray-500);
+            font-style: italic;
+        }
+
+        /* Input fields within table cells for editing */
+        .edit-input {
+            width: 100%;
+            padding: 8px; /* p-2 */
+            border: 1px solid var(--color-blue-300); /* border-blue-300 */
+            border-radius: 6px; /* rounded-md */
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.1s, box-shadow 0.1s;
+        }
+
+        .edit-input:focus {
+            box-shadow: 0 0 0 1px var(--color-blue-400); /* focus:ring-1 focus:ring-blue-400 */
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Action Buttons */
+        .action-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            margin: 0 6px; /* mr-3 */
+            transition: transform 0.15s ease-in-out, color 0.15s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-button:hover {
+            transform: scale(1.1);
+        }
+
+        .edit-btn { color: var(--color-indigo-600, #4f46e5); /* text-indigo-600 */ }
+        .edit-btn:hover { color: var(--color-indigo-900, #3730a3); /* hover:text-indigo-900 */ }
+
+        .save-btn { color: var(--color-green-600); /* text-green-600 */ }
+        .save-btn:hover { color: var(--color-green-900); /* hover:text-green-900 */ }
+
+        .delete-btn { color: var(--color-red-600); /* text-red-600 */ }
+        .delete-btn:hover { color: var(--color-red-700); /* hover:text-red-900 */ }
+
+        /* Toggle Switch */
+        .toggle-switch-label {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .toggle-switch-checkbox {
+            position: absolute;
+            left: -9999px; /* sr-only */
+        }
+
+        .toggle-switch-background {
+            width: 44px; /* w-11 */
+            height: 24px; /* h-6 */
+            background-color: var(--color-gray-200); /* bg-gray-200 */
+            border-radius: 9999px; /* rounded-full */
+            transition: background-color 0.2s;
+            position: relative;
+        }
+
+        .toggle-switch-checkbox:focus-visible + .toggle-switch-background {
+            box-shadow: 0 0 0 4px var(--color-blue-transparent-50); /* peer-focus:ring-4 peer-focus:ring-blue-300 */
+        }
+
+        .toggle-switch-checkbox:checked + .toggle-switch-background {
+            background-color: var(--color-blue-600); /* peer-checked:bg-blue-600 */
+        }
+
+        .toggle-switch-handle {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px; /* w-5 */
+            height: 20px; /* h-5 */
+            background-color: var(--color-white);
+            border-radius: 9999px; /* rounded-full */
+            transition: transform 0.2s, background-color 0.2s, border 0.2s;
+            border: 1px solid var(--color-gray-300); /* border-gray-300 */
+        }
+
+        .toggle-switch-checkbox:checked + .toggle-switch-background .toggle-switch-handle {
+            transform: translateX(20px); /* peer-checked:after:translate-x-full */
+            border-color: var(--color-white); /* peer-checked:after:border-white */
+        }
+
+        .toggle-status-icon {
+            margin-left: 12px; /* ml-3 */
+            font-size: 14px; /* text-sm */
+            font-weight: 500; /* font-medium */
+            color: var(--color-gray-900); /* text-gray-900 */
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .toggle-status-icon svg {
+            display: inline-block;
+        }
+
+        .toggle-status-icon .active-icon { color: var(--color-green-500); /* text-green-500 */ }
+        .toggle-status-icon .inactive-icon { color: var(--color-red-500); /* text-red-500 */ }
+
+        /* Custom Modal Styles */
+        .custom-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--color-black-transparent-60);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .custom-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .custom-modal-content {
+            background-color: var(--color-white);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px var(--color-black-transparent-03);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+
+        .custom-modal-overlay.show .custom-modal-content {
+            transform: translateY(0);
+        }
+
+        .custom-modal-content h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: var(--color-gray-800); /* Adjusted to a neutral dark color */
+        }
+
+        .custom-modal-content p {
+            font-size: 16px;
+            color: var(--color-gray-600); /* Adjusted to a neutral medium color */
+            margin-bottom: 25px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .modal-button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s ease;
+        }
+
+        .modal-button.confirm {
+            background-color: var(--color-red-600); /* red-600 */
+            color: var(--color-white);
+        }
+
+        .modal-button.confirm:hover {
+            background-color: var(--color-red-700); /* red-700 */
+        }
+
+        .modal-button.cancel {
+            background-color: var(--color-gray-200); /* gray-200 */
+            color: var(--color-gray-700); /* gray-700 */
+        }
+
+        .modal-button.cancel:hover {
+            background-color: var(--color-gray-300); /* gray-300 */
+        }
+
+        /* Settings Section Specific Styles */
+        .settings-form-group {
+            background-color: var(--color-gray-50);
+            border: 1px solid var(--color-gray-200);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .settings-form-group h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--color-indigo-700);
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--color-gray-200);
+            padding-bottom: 10px;
+        }
+        .settings-form-group .form-field {
+            margin-bottom: 15px;
+        }
+        .settings-form-group .action-button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            width: auto; /* Override general add-button width */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .settings-form-group .action-button.primary {
+            background-color: var(--color-blue-600);
+            color: var(--color-white);
+        }
+        .settings-form-group .action-button.primary:hover {
+            background-color: var(--color-blue-700);
+        }
+        .settings-form-group .action-button.danger {
+            background-color: var(--color-red-600);
+            color: var(--color-white);
+        }
+        .settings-form-group .action-button.danger:hover {
+            background-color: var(--color-red-700);
+        }
+        .settings-form-group .action-button svg {
+            margin-right: 8px;
+        }
+
+        /* New styles for timetable section when disabled */
+        .timetable-disabled {
+            filter: grayscale(80%) opacity(0.6);
+            pointer-events: none; /* Disable interaction with elements inside */
+            transition: filter 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        }
+
+        /* Manual Section Specific Styles */
+        .manual-control-group {
+            background-color: var(--color-blue-50);
+            border: 1px solid var(--color-blue-200);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .manual-control-group h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--color-blue-700);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .manual-control-group h3 svg {
+            margin-right: 10px;
+            color: var(--color-blue-500);
+        }
+
+        .ring-bell-button {
+            background-color: var(--color-green-600);
+            color: var(--color-white);
+            font-weight: 700;
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            font-size: 20px;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .ring-bell-button:hover {
+            background-color: var(--color-green-700);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .ring-bell-button:active {
+            background-color: var(--color-green-900);
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .ring-bell-button svg {
+            margin-right: 10px;
+        }
+
+        /* Hard Switch Toggle specific styling */
+        .hard-switch-toggle-group {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--color-gray-100);
+            border: 1px solid var(--color-gray-300);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .hard-switch-toggle-group label {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--color-gray-700);
+            margin-bottom: 0; /* Override form-field label margin */
+        }
+
+        /* --- Mobile Responsiveness (Phones: max-width 768px) --- */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 20px;
+                border-radius: 8px;
+            }
+
+            h1 {
+                font-size: 28px; /* Smaller heading for mobile */
+                margin-bottom: 20px;
+            }
+
+            h1 svg {
+                width: 28px;
+                height: 28px;
+                margin-right: 8px;
+            }
+
+            .user-email-display {
+                font-size: 12px;
+                margin-bottom: 10px;
+            }
+
+            /* Stack navigation buttons on small screens */
+            .main-nav {
+                flex-direction: column;
+                gap: 8px;
+                padding: 8px;
+                margin-bottom: 20px;
+            }
+
+            .nav-button {
+                width: 100%; /* Full width buttons */
+                padding: 12px 15px;
+                font-size: 15px;
+            }
+
+            /* Day selection buttons to wrap more aggressively */
+            .day-selection {
+                padding: 10px;
+                gap: 5px;
+            }
+
+            .day-button {
+                padding: 6px 10px;
+                font-size: 13px;
+                min-width: unset; /* Remove min-width to allow more flexible wrapping */
+                flex-basis: calc(33.33% - 5px); /* 3 columns on small phones */
+            }
+
+            /* Forms: single column layout */
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .add-period-form {
+                padding: 15px;
+                margin-bottom: 30px;
+            }
+
+            .add-period-form h2 {
+                font-size: 20px;
+                margin-bottom: 12px;
+            }
+
+            .add-button {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+
+            /* Table responsiveness - Card-like layout for phones */
+            .table-wrapper {
+                overflow-x: hidden; /* Hide horizontal scroll on small screens */
+            }
+
+            table {
+                width: 100%; /* Ensure table takes full width */
+                display: block; /* Make table behave like a block element */
+            }
+
+            thead {
+                display: none; /* Hide table header on small screens */
+            }
+
+            tbody, tr {
+                display: block; /* Make tbody and tr behave like block elements */
+                width: 100%; /* Ensure they take full width */
+            }
+
+            tbody tr {
+                margin-bottom: 15px; /* Add space between "cards" */
+                border: 1px solid var(--color-gray-200); /* Add border to each "card" */
+                border-radius: 8px; /* Rounded corners for "cards" */
+                box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Subtle shadow for "cards" */
+                padding: 10px; /* Padding inside each "card" */
+            }
+
+            td {
+                display: flex; /* Make td a flex container */
+                justify-content: space-between; /* Space out content and label */
+                align-items: center; /* Vertically align items */
+                padding: 8px 0; /* Smaller vertical padding */
+                border-bottom: 1px dashed var(--color-gray-200); /* Dashed separator between fields */
+                white-space: normal; /* Allow text to wrap */
+            }
+
+            td:last-child {
+                border-bottom: none; /* No border on the last td in a row */
+            }
+
+            td::before {
+                content: attr(data-label); /* Use data-label for the pseudo-element content */
+                font-weight: 600; /* Make label bold */
+                color: var(--color-gray-600); /* Color for the label */
+                flex-shrink: 0; /* Prevent label from shrinking */
+                margin-right: 10px; /* Space between label and value */
+                min-width: 80px; /* Give labels a minimum width */
+                text-align: left;
+            }
+
+            /* Specific adjustments for cells that don't need a label or have special layout */
+            td:nth-child(1)::before { content: 'Name'; }
+            td:nth-child(2)::before { content: 'Day'; }
+            td:nth-child(3)::before { content: 'Start'; }
+            td:nth-child(4)::before { content: 'End'; }
+            td:nth-child(5)::before { content: 'Status'; justify-content: flex-start; } /* Align status label to start */
+            td:nth-child(6)::before { content: ''; display: none; } /* Hide label for actions column */
+            td:nth-child(6) {
+                justify-content: center; /* Center action buttons */
+                padding-top: 15px; /* More space above buttons */
+            }
+
+            /* Input fields within table cells for editing in card view */
+            .edit-input {
+                flex-grow: 1; /* Allow input to take remaining space */
+                padding: 6px;
+                font-size: 14px;
+            }
+
+            /* Adjust action button sizes */
+            .action-button svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            /* Adjust toggle switch size if necessary, though current size is usually fine */
+            .toggle-switch-background {
+                width: 38px; /* Slightly smaller width */
+                height: 20px; /* Slightly smaller height */
+            }
+
+            .toggle-switch-handle {
+                width: 16px; /* Smaller handle */
+                height: 16px; /* Smaller handle */
+                top: 2px;
+                left: 2px;
+            }
+
+            .toggle-switch-checkbox:checked + .toggle-switch-background .toggle-switch-handle {
+                transform: translateX(18px); /* Adjust translation for smaller switch */
+            }
+
+            .toggle-status-icon {
+                font-size: 12px;
+                margin-left: 8px;
+            }
+            .toggle-status-icon svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            /* Modal adjustments */
+            .custom-modal-content {
+                padding: 20px;
+                width: 95%; /* Take more width on small screens */
+            }
+            .custom-modal-content h3 {
+                font-size: 20px;
+            }
+            .custom-modal-content p {
+                font-size: 14px;
+            }
+            .modal-button {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+
+            /* Manual section adjustments */
+            .manual-control-group {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+            .manual-control-group h3 {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+            .ring-bell-button {
+                padding: 12px 25px;
+                font-size: 18px;
+                margin-bottom: 20px;
+            }
+            .hard-switch-toggle-group {
+                padding: 12px;
+            }
+            .hard-switch-toggle-group label {
+                font-size: 14px;
+            }
+            .section-content {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .day-button {
+                flex-basis: calc(50% - 4px); /* 2 columns on very small phones */
+            }
+        }
+
+        /* --- Tablet Responsiveness (min-width 769px and max-width 1024px) --- */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 32px;
+                margin-bottom: 25px;
+            }
+
+            h1 svg {
+                width: 32px;
+                height: 32px;
+            }
+
+            .user-email-display {
+                font-size: 13px;
+                margin-bottom: 12px;
+            }
+
+            .main-nav {
+                flex-direction: row; /* Keep horizontal for tablets */
+                gap: 12px;
+                padding: 10px;
+                margin-bottom: 25px;
+            }
+
+            .nav-button {
+                padding: 10px 18px;
+                font-size: 16px;
+                flex-grow: 1; /* Allow buttons to grow evenly */
+            }
+
+            .day-selection {
+                padding: 12px;
+                gap: 6px;
+            }
+
+            .day-button {
+                padding: 7px 14px;
+                font-size: 14px;
+                flex-basis: auto; /* Revert to natural sizing */
+            }
+
+            /* Forms: adjust grid for tablets */
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr); /* Two columns for tablet forms */
+                gap: 14px;
+            }
+
+            .add-period-form {
+                padding: 20px;
+                margin-bottom: 35px;
+            }
+
+            .add-period-form h2 {
+                font-size: 22px;
+                margin-bottom: 14px;
+            }
+
+            .add-button {
+                padding: 11px 22px;
+                font-size: 17px;
+                grid-column: span 2; /* Make add button span two columns */
+            }
+
+            /* Table responsiveness - Revert to traditional table for tablets */
+            .table-wrapper {
+                overflow-x: auto; /* Enable horizontal scroll if content overflows */
+            }
+
+            table {
+                display: table; /* Revert to default table display */
+                min-width: 700px; /* Ensure minimum width to prevent squishing */
+            }
+
+            thead {
+                display: table-header-group; /* Show header */
+            }
+
+            tbody, tr {
+                display: table-row-group; /* Revert to default */
+            }
+
+            tbody tr {
+                margin-bottom: 0; /* Remove card spacing */
+                border: none; /* Remove card border */
+                border-radius: 0; /* Remove card border-radius */
+                box-shadow: none; /* Remove card shadow */
+                padding: 0; /* Remove card padding */
+            }
+
+            td {
+                display: table-cell; /* Revert to default table cell display */
+                padding: 12px 18px; /* Adjusted padding for tablet table cells */
+                border-bottom: 1px solid var(--color-gray-200); /* Solid border for table rows */
+                white-space: nowrap; /* Keep content on one line if possible */
+            }
+
+            td::before {
+                content: none; /* Hide data-label pseudo-elements */
+            }
+
+            /* Re-align specific columns for tablet table */
+            td:nth-child(5), td:nth-child(6) { /* Active and Actions columns */
+                text-align: center;
+            }
+
+            /* Input fields within table cells for editing */
+            .edit-input {
+                padding: 7px;
+                font-size: 14px;
+            }
+
+            /* Manual section adjustments */
+            .manual-control-group {
+                padding: 18px;
+                margin-bottom: 18px;
+            }
+            .manual-control-group h3 {
+                font-size: 20px;
+                margin-bottom: 18px;
+            }
+            .ring-bell-button {
+                padding: 14px 28px;
+                font-size: 19px;
+                margin-bottom: 22px;
+            }
+            .hard-switch-toggle-group {
+                padding: 14px;
+            }
+            .hard-switch-toggle-group label {
+                font-size: 15px;
+            }
+            .section-content {
+                font-size: 15px;
+            }
+        }
+
+        /* --- Desktop Responsiveness (min-width 992px and max-width 1199px) --- */
+        @media only screen and (min-width: 992px) and (max-width: 1199px) {
+            .container {
+                max-width: 1000px; /* Slightly wider container for smaller desktops */
+                padding: 35px;
+            }
+
+            h1 {
+                font-size: 38px;
+                margin-bottom: 35px;
+            }
+
+            h1 svg {
+                width: 38px;
+                height: 38px;
+            }
+
+            .user-email-display {
+                font-size: 15px;
+                margin-bottom: 18px;
+            }
+
+            .main-nav {
+                gap: 15px;
+                padding: 12px;
+                margin-bottom: 35px;
+            }
+
+            .nav-button {
+                padding: 12px 22px;
+                font-size: 17px;
+            }
+
+            .day-selection {
+                padding: 18px;
+                gap: 10px;
+            }
+
+            .day-button {
+                padding: 9px 18px;
+                font-size: 15px;
+            }
+
+            .add-period-form {
+                padding: 28px;
+                margin-bottom: 45px;
+            }
+
+            .add-period-form h2 {
+                font-size: 26px;
+                margin-bottom: 18px;
+            }
+
+            .add-button {
+                padding: 14px 28px;
+                font-size: 19px;
+            }
+
+            th, td {
+                padding: 14px 20px;
+                font-size: 13px;
+            }
+
+            .edit-input {
+                padding: 9px;
+                font-size: 15px;
+            }
+        }
+
+        /* --- Extra large devices (large desktops, ≥1200px) --- */
+        @media only screen and (min-width: 1200px) {
+            .container {
+                max-width: 1200px; /* Wider container for large desktops */
+                padding: 40px;
+            }
+
+            h1 {
+                font-size: 42px;
+                margin-bottom: 40px;
+            }
+
+            h1 svg {
+                width: 42px;
+                height: 42px;
+            }
+
+            .user-email-display {
+                font-size: 16px;
+                margin-bottom: 20px;
+            }
+
+            .main-nav {
+                gap: 20px;
+                padding: 15px;
+                margin-bottom: 40px;
+            }
+
+            .nav-button {
+                padding: 14px 25px;
+                font-size: 18px;
+            }
+
+            .day-selection {
+                padding: 20px;
+                gap: 12px;
+            }
+
+            .day-button {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+
+            .add-period-form {
+                padding: 32px;
+                margin-bottom: 50px;
+            }
+
+            .add-period-form h2 {
+                font-size: 28px;
+                margin-bottom: 20px;
+            }
+
+            .add-button {
+                padding: 16px 30px;
+                font-size: 20px;
+            }
+
+            th, td {
+                padding: 16px 24px;
+                font-size: 14px;
+            }
+
+            .edit-input {
+                padding: 10px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            My Real-time Timetable
+        </h1>
+
+        <!-- User Email Display (Placeholder) -->
+        <div class="user-email-display">
+            <p>Logged in as: <span id="userEmailDisplay">Loading...</span></p>
+        </div>
+
+        <!-- Main Navigation Menu -->
+        <div class="main-nav">
+            <button id="navTimetableBtn" class="nav-button active">Timetable</button>
+            <button id="navManualBtn" class="nav-button">Manual</button>
+            <button id="navSettingsBtn" class="nav-button">Settings</button>
+        </div>
+
+        <!-- Timetable Section -->
+        <div id="timetableSection" class="section active-section">
+            <!-- Day Selection Buttons -->
+            <div class="day-selection" id="daySelection">
+                <!-- Buttons will be generated by JavaScript -->
+            </div>
+
+            <!-- Add New Period Form -->
+            <div class="add-period-form">
+                <h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
+                    </svg>
+                    Add New Period
+                </h2>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="newName">Period Name</label>
+                        <input type="text" id="newName" placeholder="e.g., Morning Session" />
+                    </div>
+                    <div class="form-field">
+                        <label for="newStartTime">Start Time</label>
+                        <input type="text" id="newStartTime" placeholder="HH:MM:SS" pattern="^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$" />
+                    </div>
+                    <div class="form-field">
+                        <label for="newEndTime">End Time</label>
+                        <input type="text" id="newEndTime" placeholder="HH:MM:SS" pattern="^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$" />
+                    </div>
+                    <button id="addPeriodBtn" class="add-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
+                        </svg>
+                        Add Period
+                    </button>
+                </div>
+            </div>
+
+            <!-- Timetable Table -->
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col" data-label="Name">Period Name</th>
+                            <th scope="col" data-label="Day">Day</th>
+                            <th scope="col" data-label="Start Time">Start Time</th>
+                            <th scope="col" data-label="End Time">End Time</th>
+                            <th scope="col" data-label="Active" style="text-align: center;">Active</th>
+                            <th scope="col" data-label="Actions" style="text-align: center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timetableBody">
+                        <!-- Periods will be rendered here by JavaScript -->
+                        <tr>
+                            <td colspan="6" class="loading-message" id="loadingMessage">Loading timetable...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manual Section -->
+        <div id="manualSection" class="section hidden-section">
+            <h2 class="section-title">Manual Bell Control</h2>
+            <div class="manual-control-group">
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M12 2v2"/></svg>
+                    Ring Bell Now
+                </h3>
+                <button id="ringBellBtn" class="ring-bell-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M12 2v2"/></svg>
+                    Ring Bell
+                </button>
+            </div>
+
+            <div class="manual-control-group">
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5A2.5 2.5 0 0 1 15 1h1a2.5 2.5 0 0 1 2.5 2.5v5c0 .83-.67 1.5-1.5 1.5"/><path d="M12 12H9c-2.2 0-4-1.8-4-4V4c0-1.1.9-2 2-2h3c1.1 0 2 .9 2 2v4"/><path d="M12 12v10"/><path d="M12 12H4"/><path d="M12 12h8"/><path d="M16 16h-4"/></svg>
+                    System Hard Switch
+                </h3>
+                <div class="hard-switch-toggle-group">
+                    <label for="toggleHardSwitch" style="margin-bottom: 0;">Hard Switch Enabled</label>
+                    <label class="">
+                        <input type="checkbox" id="toggleHardSwitch" class="toggle-switch-checkbox" checked />
+                        <div class="toggle-switch-background">
+                            <span class="toggle-switch-handle"></span>
+                        </div>
+                    </label>
+                </div>
+                <p class="section-content" style="font-size: 14px; margin-top: 15px; color: var(--color-gray-600);">
+                    When the hard switch is OFF, the bell system (both manual and automated timetable rings) will be deactivated.
+                </p>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settingsSection" class="section hidden-section">
+            <h2 class="section-title">Settings</h2>
+
+            <div class="settings-form-group">
+                <h3>Change Password</h3>
+                <div class="form-field">
+                    <label for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" />
+                </div>
+                <div class="form-field">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" />
+                </div>
+                <div class="form-field">
+                    <label for="confirmNewPassword">Confirm New Password</label>
+                    <input type="password" id="confirmNewPassword" />
+                </div>
+                <button id="changePasswordBtn" class="action-button primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6v12a3 3 0 1 0 3-3H2a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h16a3 3 0 1 0-3-3Z"/></svg>
+                    Change Password
+                </button>
+            </div>
+
+            <div class="settings-form-group">
+                <h3>Change Email</h3>
+                <div class="form-field">
+                    <label for="emailCurrentPassword">Current Password</label>
+                    <input type="password" id="emailCurrentPassword" />
+                </div>
+                <div class="form-field">
+                    <label for="newEmail">New Email</label>
+                    <input type="email" id="newEmail" />
+                </div>
+                <button id="changeEmailBtn" class="action-button primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                    Change Email
+                </button>
+            </div>
+
+            <div class="settings-form-group">
+                <h3>Timetable Visibility</h3>
+                <div class="form-field" style="flex-direction: row; align-items: center; justify-content: space-between;">
+                    <label for="toggleTimetableVisibility" style="margin-bottom: 0;">Show Timetable Section</label>
+                    <label class="toggle-switch-label">
+                        <input type="checkbox" id="toggleTimetableVisibility" class="toggle-switch-checkbox" checked />
+                        <div class="toggle-switch-background">
+                            <span class="toggle-switch-handle"></span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-form-group" style="text-align: center;">
+                <h3>Account Actions</h3>
+                <button id="logoutBtn" class="action-button danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="17 16 22 12 17 8"/><line x1="22" x2="10" y1="12" y2="12"/></svg>
+                    Logout
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Custom Modal for Confirmations -->
+    <div id="customModalOverlay" class="custom-modal-overlay">
+        <div class="custom-modal-content">
+            <h3 id="modalTitle">Confirm Action</h3>
+            <p id="modalMessage">Are you sure you want to proceed?</p>
+            <div class="modal-buttons">
+                <button id="modalConfirmBtn" class="modal-button confirm">Confirm</button>
+                <button id="modalCancelBtn" class="modal-button cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Define your PHP backend endpoint URL
+        // IMPORTANT: Replace this with the actual URL to your PHP script!
+        const PHP_API_URL = 'http://localhost:3000/final/backend/main.php';
+
+        const timetableBody = document.getElementById('timetableBody');
+        const newNameInput = document.getElementById('newName');
+        const newStartTimeInput = document.getElementById('newStartTime');
+        const newEndTimeInput = document.getElementById('newEndTime');
+        const addPeriodBtn = document.getElementById('addPeriodBtn');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const daySelectionContainer = document.getElementById('daySelection');
+
+        // New element references for navigation and email
+        const navTimetableBtn = document.getElementById('navTimetableBtn');
+        const navManualBtn = document.getElementById('navManualBtn');
+        const navSettingsBtn = document.getElementById('navSettingsBtn');
+        const timetableSection = document.getElementById('timetableSection');
+        const manualSection = document.getElementById('manualSection');
+        const settingsSection = document.getElementById('settingsSection');
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+
+        // New element reference for timetable visibility toggle
+        const toggleTimetableVisibility = document.getElementById('toggleTimetableVisibility');
+
+        // New element references for Manual Section
+        const ringBellBtn = document.getElementById('ringBellBtn');
+        const toggleHardSwitch = document.getElementById('toggleHardSwitch');
+
+
+        // Custom Modal Elements
+        const customModalOverlay = document.getElementById('customModalOverlay');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+        let resolveModalPromise;
+        let currentDay = 'All Days';
+        let isTimetableEnabled = true; // Global state for timetable visibility
+        let isHardSwitchEnabled = true; // Global state for hard switch visibility
+        let currentUserId = null; // Store the current user ID after login/session check
+
+        // Corrected daysOfWeek to include Monday
+        const daysOfWeek = ['All Days', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+        // Function to show custom modal
+        const showCustomModal = (title, message) => {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            customModalOverlay.classList.add('show');
+
+            return new Promise((resolve) => {
+                resolveModalPromise = resolve;
+            });
+        };
+
+        // Event listeners for custom modal buttons
+        modalConfirmBtn.onclick = () => {
+            customModalOverlay.classList.remove('show');
+            resolveModalPromise(true);
+        };
+
+        modalCancelBtn.onclick = () => {
+            customModalOverlay.classList.remove('show');
+            resolveModalPromise(false);
+        };
+
+        /**
+         * Helper function to ensure time is in HH:MM:SS format.
+         * It attempts to parse various common time formats and pads with leading zeros.
+         * @param {string} timeString - The time string to format.
+         * @returns {string} The formatted time string in HH:MM:SS, or an empty string if invalid.
+         */
+        const formatTimeForInput = (timeString) => {
+            if (!timeString) return '';
+            
+            // Try to match HH:MM:SS, HH:MM, or H:M:S etc.
+            const parts = timeString.split(':');
+            let hours = parseInt(parts[0], 10);
+            let minutes = parseInt(parts[1], 10);
+            let seconds = parts[2] ? parseInt(parts[2], 10) : 0; // Default to 0 if seconds part is missing
+
+            if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) {
+                console.warn(`Could not fully parse time string "${timeString}". Returning original or empty.`);
+                // Fallback: try to return first 8 characters if it looks like HH:MM:SS
+                return timeString.length >= 8 ? timeString.substring(0, 8) : '';
+            }
+
+            const formattedHours = String(hours).padStart(2, '0');
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            const formattedSeconds = String(seconds).padStart(2, '0');
+            return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+        };
+
+        /**
+         * Fetches user email and settings from the backend session.
+         */
+        const fetchUserEmailAndSettings = async () => {
+            userEmailDisplay.textContent = 'Loading...'; // Show loading state
+            try {
+                const response = await fetch(`${PHP_API_URL}?action=get_user_email`); // This action now returns settings too
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('HTTP Error fetching user email/settings:', response.status, response.statusText, errorText);
+                    throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText.substring(0, 200)}...`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    userEmailDisplay.textContent = data.email || 'N/A'; // Display email or 'N/A' if empty
+                    
+                    // Update global timetable enabled state and toggle button
+                    isTimetableEnabled = data.timetable_enabled;
+                    toggleTimetableVisibility.checked = isTimetableEnabled;
+                    applyTimetableVisibility(); // Apply visual state
+
+                    // Update global hard switch enabled state and toggle button
+                    isHardSwitchEnabled = data.hard_switch_enabled;
+                    toggleHardSwitch.checked = isHardSwitchEnabled;
+                    applyHardSwitchState(); // Apply visual state for hard switch
+
+                    // Store user ID if available (backend doesn't send it directly in get_user_email, but it's good practice)
+                    // For now, we rely on session on backend. If frontend needs userId, backend should provide it.
+                    // Assuming currentUserId is managed by login/register on frontend.
+                    // If not, and if you need userId on frontend for other actions, you'd fetch it here.
+                } else {
+                    userEmailDisplay.textContent = 'Error';
+                    await showCustomModal("User Data Error", data.message);
+                }
+            } catch (error) {
+                console.error('Network error fetching user email/settings:', error);
+                userEmailDisplay.textContent = 'Network Error';
+                await showCustomModal("Network Error", "Could not fetch user data. Please check your network connection and backend URL.");
+            }
+        };
+
+        /**
+         * Applies the visual state of the timetable section based on isTimetableEnabled.
+         */
+        const applyTimetableVisibility = () => {
+            if (isTimetableEnabled) {
+                timetableSection.classList.remove('timetable-disabled');
+                // Re-enable interactive elements if needed (though pointer-events: none handles most)
+                addPeriodBtn.disabled = false;
+                newNameInput.disabled = false;
+                newStartTimeInput.disabled = false;
+                newEndTimeInput.disabled = false;
+                document.querySelectorAll('.day-button').forEach(btn => btn.disabled = false);
+            } else {
+                timetableSection.classList.add('timetable-disabled');
+                // Disable interactive elements
+                addPeriodBtn.disabled = true;
+                newNameInput.disabled = true;
+                newStartTimeInput.disabled = true;
+                newEndTimeInput.disabled = true;
+                document.querySelectorAll('.day-button').forEach(btn => btn.disabled = true);
+            }
+        };
+
+        /**
+         * Applies the visual state of the manual bell controls based on isHardSwitchEnabled.
+         */
+        const applyHardSwitchState = () => {
+            if (isHardSwitchEnabled) {
+                ringBellBtn.disabled = false;
+                ringBellBtn.style.filter = 'none'; // Remove grayscale if applied
+                ringBellBtn.style.opacity = '1';
+                ringBellBtn.style.cursor = 'pointer';
+            } else {
+                ringBellBtn.disabled = true;
+                ringBellBtn.style.filter = 'grayscale(100%)'; // Grayscale effect
+                ringBellBtn.style.opacity = '0.6';
+                ringBellBtn.style.cursor = 'not-allowed';
+            }
+        };
+
+
+        // Function to render the timetable
+        const renderTimetable = (periods) => {
+            timetableBody.innerHTML = ''; // Clear existing rows
+            if (periods.length === 0) {
+                timetableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="loading-message">No periods added for ${currentDay === 'All Days' ? 'this day' : currentDay}.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            periods.forEach(period => {
+                // Ensure time values are in HH:MM:SS format for display and input fields using the new helper
+                const displayStartTime = formatTimeForInput(period.start_time);
+                const displayEndTime = formatTimeForInput(period.end_time);
+
+                const row = document.createElement('tr');
+                row.id = `period-${period.id}`;
+                row.className = `transition duration-150 ease-in-out ${period.active ? 'hover:bg-gray-50' : 'deactivated-row'}`;
+                row.dataset.editing = 'false';
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Period Name">
+                        <span class="period-name text-gray-900 font-medium">${period.name}</span>
+                        <input type="text" value="${period.name}" class="edit-input period-name-input hidden" />
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Day">
+                        <span class="period-day text-gray-700">${period.day_of_week}</span>
+                        <select class="edit-input period-day-input hidden">
+                            ${daysOfWeek.filter(d => d !== 'All Days').map(day => `<option value="${day}" ${period.day_of_week === day ? 'selected' : ''}>${day}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Start Time">
+                        <span class="period-start-time text-gray-700">${displayStartTime}</span>
+                        <input type="text" value="${displayStartTime}" class="edit-input period-start-time-input hidden" placeholder="HH:MM:SS" pattern="^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$" />
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="End Time">
+                        <span class="period-end-time text-gray-700">${displayEndTime}</span>
+                        <input type="text" value="${displayEndTime}" class="edit-input period-end-time-input hidden" placeholder="HH:MM:SS" pattern="^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$" />
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center" data-label="Active">
+                        <label class="toggle-switch-label">
+                            <input type="checkbox" data-id="${period.id}" ${period.active ? 'checked' : ''} class="toggle-switch-checkbox" />
+                            <div class="toggle-switch-background">
+                                <span class="toggle-switch-handle"></span>
+                            </div>
+                            <span class="toggle-status-icon">
+                                ${period.active ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="active-icon"><path d="M8 2v4"/><path d="M16 2v4"/><path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/><path d="M21 13a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2v-4a2 2 0 0 0-2-2z"/><path d="M9 18l3 3L22 11"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inactive-icon"><path d="M8 2v4"/><path d="M16 2v4"/><path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/><path d="M21 13a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2v-4a2 2 0 0 0-2-2z"/><path d="M14 2v4"/><path d="M3 6h18"/><path d="M3 10h18"/><path d="m17 17-5 5"/><path d="m12 17 5 5"/></svg>'}
+                            </span>
+                        </label>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center" data-label="Actions">
+                        <button data-id="${period.id}" class="action-button edit-btn" title="Edit Period">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                        </button>
+                        <button data-id="${period.id}" class="action-button save-btn hidden" title="Save Changes">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        </button>
+                        <button data-id="${period.id}" class="action-button delete-btn" title="Delete Period">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        </button>
+                    </td>
+                `;
+                timetableBody.appendChild(row);
+            });
+
+            // Re-attach event listeners after rendering
+            attachEventListeners();
+        };
+
+        // Function to toggle editing mode for a row
+        const toggleEditMode = (rowElement, enable) => {
+            const spans = rowElement.querySelectorAll('td > span:not(.toggle-status-icon)');
+            const inputs = rowElement.querySelectorAll('input.edit-input');
+            const selects = rowElement.querySelectorAll('select.edit-input');
+            const editBtn = rowElement.querySelector('.edit-btn');
+            const saveBtn = rowElement.querySelector('.save-btn');
+
+            if (enable) {
+                spans.forEach(span => span.classList.add('hidden'));
+                inputs.forEach(input => input.classList.remove('hidden'));
+                selects.forEach(select => select.classList.remove('hidden'));
+                editBtn.classList.add('hidden');
+                saveBtn.classList.remove('hidden');
+                rowElement.dataset.editing = 'true';
+            } else {
+                spans.forEach(span => span.classList.remove('hidden'));
+                inputs.forEach(input => input.classList.add('hidden'));
+                selects.forEach(select => select.classList.add('hidden'));
+                editBtn.classList.remove('hidden');
+                saveBtn.classList.add('hidden');
+                rowElement.dataset.editing = 'false';
+            }
+        };
+
+        /**
+         * Fetches periods from the backend.
+         * @returns {Promise<void>}
+         */
+        const fetchPeriods = async () => {
+            // Only fetch if timetable is enabled
+            if (!isTimetableEnabled) {
+                timetableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="loading-message">Timetable is currently turned off.</td>
+                    </tr>
+                `;
+                loadingMessage.classList.add('hidden');
+                return;
+            }
+
+            loadingMessage.classList.remove('hidden');
+            try {
+                const url = `${PHP_API_URL}?action=get_all&day=${encodeURIComponent(currentDay)}`;
+                console.log('Fetching periods from:', url); // Log the URL being fetched
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('HTTP Error Response:', response.status, response.statusText, errorText);
+                    throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText.substring(0, 200)}...`);
+                }
+
+                const data = await response.json();
+                console.log('Backend response data:', data); // Log the parsed JSON data
+                console.log('Periods array for rendering:', data.periods); // Log the periods array specifically
+
+                if (data.success) {
+                    data.periods.sort((a, b) => {
+                        // Sort by start_time as per backend's field name
+                        if (a.start_time < b.start_time) return -1;
+                        if (a.start_time > b.start_time) return 1;
+                        return 0;
+                    });
+                    renderTimetable(data.periods);
+                } else {
+                    renderTimetable([]); // Clear table on error
+                    await showCustomModal("Backend Error", data.message);
+                }
+            } catch (error) {
+                console.error('Error fetching periods:', error);
+                renderTimetable([]);
+                await showCustomModal("Network Error", `Could not fetch timetable. Details: ${error.message || error}. Please check your network connection and backend URL.`);
+            } finally {
+                loadingMessage.classList.add('hidden');
+            }
+        };
+
+        /**
+         * Adds a new period to the backend.
+         * @param {object} periodData - The data for the new period.
+         * @returns {Promise<void>}
+         */
+        const addPeriod = async (periodData) => {
+            try {
+                // Include 'action' in the JSON body for add
+                const response = await fetch(PHP_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'add', ...periodData }),
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    await showCustomModal("Success", data.message);
+                    await fetchPeriods();
+                } else {
+                    await showCustomModal("Add Error", data.message);
+                }
+            } catch (error) {
+                console.error('Error adding period:', error);
+                await showCustomModal("Network Error", "Could not add period. Please check your network connection.");
+            }
+        };
+
+        /**
+         * Updates an existing period in the backend.
+         * @param {string} id - The ID of the period to update.
+         * @param {object} updatedData - The updated data for the period.
+         * @returns {Promise<void>}
+         */
+        const updatePeriod = async (id, updatedData) => {
+            try {
+                // Include 'action' in the JSON body for update
+                const response = await fetch(PHP_API_URL, { // URL without query string
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'update', id: id, ...updatedData }), // Pass action and ID in body
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    await showCustomModal("Success", data.message);
+                    await fetchPeriods();
+                } else {
+                    await showCustomModal("Update Error", data.message);
+                }
+            } catch (error) {
+                console.error('Error updating period:', error);
+                await showCustomModal("Network Error", "Could not update period. Please check your network connection.");
+            }
+        };
+
+        /**
+         * Deletes a period from the backend.
+         * @param {string} id - The ID of the period to delete.
+         * @returns {Promise<void>}
+         */
+        const deletePeriod = async (id) => {
+            try {
+                // Include 'action' and 'id' in the JSON body for delete
+                const response = await fetch(PHP_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'delete', id: id }),
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    await showCustomModal("Success", data.message);
+                    await fetchPeriods();
+                } else {
+                    await showCustomModal("Delete Error", data.message);
+                }
+            } catch (error) {
+                console.error('Error deleting period:', error);
+                await showCustomModal("Network Error", "Could not delete period. Please check your network connection.");
+            }
+        };
+
+        // Event listener attachment function
+        const attachEventListeners = () => {
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.onclick = (e) => {
+                    const row = e.target.closest('tr');
+                    toggleEditMode(row, true);
+                };
+            });
+
+            document.querySelectorAll('.save-btn').forEach(button => {
+                button.onclick = async (e) => {
+                    const id = e.target.closest('button').dataset.id;
+                    const row = e.target.closest('tr');
+                    const name = row.querySelector('.period-name-input').value.trim(); // Trim whitespace
+                    const day_of_week = row.querySelector('.period-day-input').value; // Changed to day_of_week
+                    const start_time = row.querySelector('.period-start-time-input').value.trim(); // Changed to start_time
+                    const end_time = row.querySelector('.period-end-time-input').value.trim();     // Changed to end_time
+
+                    // Client-side validation for HH:MM:SS format
+                    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/;
+                    if (!timeRegex.test(start_time) || !timeRegex.test(end_time)) {
+                        await showCustomModal("Input Error", "Invalid time format. Please use HH:MM:SS (e.g., 09:00:00).");
+                        return;
+                    }
+
+                    // Client-side validation: End time must not be before start time
+                    if (start_time >= end_time) {
+                        await showCustomModal("Input Error", "End Time must be after Start Time.");
+                        return;
+                    }
+
+                    // Pass updated data with correct keys to backend
+                    await updatePeriod(id, { name, day_of_week, start_time, end_time });
+                };
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.onclick = async (e) => {
+                    const id = e.target.closest('button').dataset.id;
+                    const confirmed = await showCustomModal("Delete Period", "Are you sure you want to delete this period?");
+                    if (confirmed) {
+                        await deletePeriod(id);
+                    }
+                };
+            });
+
+            // MODIFICATION START: Refine toggle-switch-checkbox listener
+            document.querySelectorAll('.toggle-switch-checkbox').forEach(checkbox => {
+                // Only attach this listener if the checkbox has a data-id (i.e., it's a period toggle)
+                if (checkbox.dataset.id) {
+                    checkbox.onchange = async (e) => {
+                        const id = e.target.dataset.id;
+                        const newActiveStatus = e.target.checked;
+                        await updatePeriod(id, { active: newActiveStatus });
+                    };
+                }
+                // Global toggles (toggleTimetableVisibility, toggleHardSwitch) will have their own specific onchange handlers below.
+            });
+            // MODIFICATION END
+        };
+
+        // Add New Period button click handler
+        addPeriodBtn.onclick = async () => {
+            const name = newNameInput.value.trim();
+            const start_time = newStartTimeInput.value.trim(); // Changed to start_time
+            const end_time = newEndTimeInput.value.trim();     // Changed to end_time
+            
+            const day_of_week = currentDay; // Changed to day_of_week
+
+            if (!name || !start_time || !end_time) {
+                await showCustomModal("Input Error", "Please fill in all fields for the new period.");
+                return;
+            }
+
+            if (day_of_week === 'All Days') {
+                await showCustomModal("Selection Required", "Please select a specific day (e.g., Monday) from the top menu before adding a new period.");
+                return;
+            }
+
+            // Client-side validation for HH:MM:SS format for new period
+            const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/;
+            if (!timeRegex.test(start_time) || !timeRegex.test(end_time)) {
+                await showCustomModal("Input Error", "Invalid time format. Please use HH:MM:SS (e.g., 09:00:00).");
+                return;
+            }
+
+            // Client-side validation: End time must not be before start time for new period
+            if (start_time >= end_time) {
+                await showCustomModal("Input Error", "End Time must be after Start Time.");
+                return;
+            }
+
+            await addPeriod({
+                name: name,
+                day_of_week: day_of_week, // Changed to day_of_week
+                start_time: start_time,   // Changed to start_time
+                end_time: end_time,     // Changed to end_time
+                active: true,
+            });
+            newNameInput.value = '';
+            newStartTimeInput.value = '';
+            newEndTimeInput.value = '';
+        };
+
+        // Function to render day selection buttons
+        const renderDaySelectionButtons = () => {
+            daySelectionContainer.innerHTML = '';
+            daysOfWeek.forEach(day => {
+                const button = document.createElement('button');
+                button.textContent = day;
+                button.className = `day-button ${currentDay === day ? 'active' : ''}`;
+                button.dataset.day = day;
+                button.onclick = () => {
+                    currentDay = day;
+                    document.querySelectorAll('.day-button').forEach(btn => {
+                        if (btn.dataset.day === currentDay) {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    });
+                    fetchPeriods();
+                };
+                daySelectionContainer.appendChild(button);
+            });
+        };
+
+        // Function to switch sections
+        const showSection = (sectionId) => {
+            timetableSection.classList.remove('active-section');
+            timetableSection.classList.add('hidden-section');
+            manualSection.classList.remove('active-section');
+            manualSection.classList.add('hidden-section');
+            settingsSection.classList.remove('active-section');
+            settingsSection.classList.add('hidden-section');
+
+            navTimetableBtn.classList.remove('active');
+            navManualBtn.classList.remove('active');
+            navSettingsBtn.classList.remove('active');
+
+            if (sectionId === 'timetableSection') {
+                timetableSection.classList.remove('hidden-section');
+                timetableSection.classList.add('active-section');
+                navTimetableBtn.classList.add('active');
+                fetchPeriods(); // Re-fetch timetable when switching back
+            } else if (sectionId === 'manualSection') {
+                manualSection.classList.remove('hidden-section');
+                manualSection.classList.add('active-section');
+                navManualBtn.classList.add('active');
+                // When navigating to manual, ensure hard switch state is applied
+                applyHardSwitchState();
+            } else if (sectionId === 'settingsSection') {
+                settingsSection.classList.remove('hidden-section');
+                settingsSection.classList.add('active-section');
+                navSettingsBtn.classList.add('active');
+                // When navigating to settings, ensure email and settings are updated
+                fetchUserEmailAndSettings(); 
+            }
+            applyTimetableVisibility(); // Apply visibility state whenever section changes
+        };
+
+        // Add event listeners to navigation buttons
+        navTimetableBtn.onclick = () => showSection('timetableSection');
+        navManualBtn.onclick = () => showSection('manualSection');
+        navSettingsBtn.onclick = () => showSection('settingsSection');
+
+
+        // --- Settings Section Functions ---
+        const currentPasswordInput = document.getElementById('currentPassword');
+        const newPasswordInput = document.getElementById('newPassword');
+        const confirmNewPasswordInput = document.getElementById('confirmNewPassword');
+        const changePasswordBtn = document.getElementById('changePasswordBtn');
+
+        const emailCurrentPasswordInput = document.getElementById('emailCurrentPassword');
+        const newEmailInput = document.getElementById('newEmail');
+        const changeEmailBtn = document.getElementById('changeEmailBtn');
+
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        changePasswordBtn.onclick = async () => {
+            const currentPassword = currentPasswordInput.value.trim();
+            const newPassword = newPasswordInput.value.trim();
+            const confirmNewPassword = confirmNewPasswordInput.value.trim();
+
+            if (!currentPassword || !newPassword || !confirmNewPassword) {
+                await showCustomModal("Input Error", "Please fill in all password fields.");
+                return;
+            }
+            if (newPassword !== confirmNewPassword) {
+                await showCustomModal("Input Error", "New password and confirmation do not match.");
+                return;
+            }
+            if (newPassword.length < 8) { // Basic password strength
+                await showCustomModal("Input Error", "New password must be at least 8 characters long.");
+                return;
+            }
+
+            try {
+                // Include 'action' in the JSON body for change_password
+                const payload = { action: 'change_password', current_password: currentPassword, new_password: newPassword };
+                console.log('Sending change_password payload:', payload);
+                const response = await fetch(PHP_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                await showCustomModal(data.success ? "Success" : "Error", data.message);
+                if (data.success) {
+                    currentPasswordInput.value = '';
+                    newPasswordInput.value = '';
+                    confirmNewPasswordInput.value = '';
+                }
+            } catch (error) {
+                console.error('Error changing password:', error);
+                await showCustomModal("Network Error", "Could not change password. Please check your network connection.");
+            }
+        };
+
+        changeEmailBtn.onclick = async () => {
+            const currentPassword = emailCurrentPasswordInput.value.trim();
+            const newEmail = newEmailInput.value.trim();
+
+            if (!currentPassword || !newEmail) {
+                await showCustomModal("Input Error", "Please fill in current password and new email.");
+                return;
+            }
+            // Basic email format validation
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+                await showCustomModal("Input Error", "Please enter a valid email address.");
+                return;
+            }
+
+            try {
+                // Include 'action' in the JSON body for change_email
+                const payload = { action: 'change_email', current_password: currentPassword, new_email: newEmail };
+                console.log('Sending change_email payload:', payload);
+                const response = await fetch(PHP_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                await showCustomModal(data.success ? "Success" : "Error", data.message);
+                if (data.success) {
+                    newEmailInput.value = '';
+                    emailCurrentPasswordInput.value = '';
+                    fetchUserEmailAndSettings(); // Update displayed email and settings
+                }
+            } catch (error) {
+                console.error('Error changing email:', error);
+                await showCustomModal("Network Error", "Could not change email. Please check your network connection.");
+            }
+        };
+
+        logoutBtn.onclick = async () => {
+            const confirmed = await showCustomModal("Logout", "Are you sure you want to log out?");
+            if (confirmed) {
+                try {
+                    // Send the action in the JSON body for POST requests
+                    const payload = { action: 'logout' };
+                    console.log('Sending logout payload:', payload);
+                    const response = await fetch(PHP_API_URL, { // URL without query string
+                        method: 'POST', 
+                        headers: { 
+                            'Content-Type': 'application/json' 
+                        },
+                        body: JSON.stringify(payload) // Action sent in JSON body
+                    });
+
+                    // Check if the response is OK before trying to parse JSON
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('HTTP Error during logout:', response.status, response.statusText, errorText);
+                        // You might want a more specific error display here, e.g., using displayError if available
+                        await showCustomModal("Logout Error", `Server responded with status ${response.status}: ${errorText.substring(0, 100)}...`);
+                        return; // Stop execution if response is not ok
+                    }
+
+                    const data = await response.json(); // Parse JSON response
+                    console.log('Parsed JSON:', data);
+
+                    if (data.success) {
+                        await showCustomModal("Success", data.message);
+                        // Redirect after successful logout
+                        window.location.href = '../index.html'; // Assuming this is your login page
+                    } else {
+                        await showCustomModal("Error", data.message);
+                    }
+                } catch (error) {
+                    console.error('Error logging out:', error);
+                    await showCustomModal("Network Error", "Could not log out. Please check your network connection or server status.");
+                }
+            }
+        };
+
+        // Event listener for the new timetable visibility toggle (specific handler)
+        toggleTimetableVisibility.onchange = async (e) => {
+            const enabled = e.target.checked;
+            try {
+                // Include 'action' in the JSON body for toggle_timetable_visibility
+                const payload = { action: 'toggle_timetable_visibility', enabled: enabled };
+                console.log('Sending toggle_timetable_visibility payload:', payload);
+                const response = await fetch(PHP_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (data.success) {
+                    isTimetableEnabled = enabled; // Update global state
+                    applyTimetableVisibility(); // Apply visual changes
+                    // If we are on the timetable section, re-fetch to show the "disabled" message
+                    if (timetableSection.classList.contains('active-section')) {
+                        fetchPeriods();
+                    }
+                    await showCustomModal("Success", data.message);
+                } else {
+                    // Revert toggle state if backend update failed
+                    toggleTimetableVisibility.checked = !enabled;
+                    await showCustomModal("Error", data.message);
+                }
+            } catch (error) {
+                console.error('Error toggling timetable visibility:', error);
+                toggleTimetableVisibility.checked = !enabled; // Revert on network error
+                await showCustomModal("Network Error", "Could not toggle timetable visibility. Please check your network connection.");
+            }
+        };
+
+        // --- Manual Section Functions ---
+        ringBellBtn.onclick = async () => {
+            if (!isHardSwitchEnabled) {
+                await showCustomModal("Bell Deactivated", "The bell cannot be rung manually because the hard switch is OFF.");
+                return;
+            }
+
+            try {
+                // No Tone.js specific code here anymore. The bell sound functionality
+                // would need to be implemented separately if desired, without Tone.js.
+
+                // Include 'action' in the JSON body for ring_bell
+                const payload = { action: 'ring_bell' };
+                console.log('Sending ring_bell payload:', payload);
+                const response = await fetch(PHP_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                await showCustomModal(data.success ? "Bell Ring" : "Error", data.message);
+            } catch (error) {
+                console.error('Error ringing bell:', error);
+                await showCustomModal("Network Error", "Could not ring bell. Please check your network connection.");
+            }
+        };
+
+        // Event listener for the hard switch toggle (specific handler)
+        toggleHardSwitch.onchange = async (e) => {
+            const enabled = e.target.checked;
+            try {
+                // Include 'action' in the JSON body for toggle_hard_switch
+                const payload = { action: 'toggle_hard_switch', enabled: enabled };
+                console.log('Sending toggle_hard_switch payload:', payload);
+                const response = await fetch(PHP_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (data.success) {
+                    isHardSwitchEnabled = enabled; // Update global state
+                    applyHardSwitchState(); // Apply visual changes
+                    await showCustomModal("Success", data.message);
+                } else {
+                    // Revert toggle state if backend update failed
+                    toggleHardSwitch.checked = !enabled;
+                    await showCustomModal("Error", data.message);
+                }
+            } catch (error) {
+                console.error('Error toggling hard switch:', error);
+                toggleHardSwitch.checked = !enabled; // Revert on network error
+                await showCustomModal("Network Error", "Could not toggle hard switch. Please check your network connection.");
+            }
+        };
+
+
+        // Initial setup when the window loads
+        window.onload = async () => {
+            await fetchUserEmailAndSettings(); // Fetch and display user email and settings (including hard switch)
+            renderDaySelectionButtons(); // Render day buttons
+            showSection('timetableSection'); // Show timetable section by default (will apply visibility based on fetched setting)
+        };
+    </script>
+</body>
+</html>

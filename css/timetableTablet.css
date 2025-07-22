@@ -1,0 +1,138 @@
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        padding: 25px;
+    }
+
+    h1 {
+        font-size: 32px;
+        margin-bottom: 25px;
+    }
+
+    h1 svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .user-email-display {
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+
+    .main-nav {
+        flex-direction: row; /* Keep horizontal for tablets */
+        gap: 12px;
+        padding: 10px;
+        margin-bottom: 25px;
+    }
+
+    .nav-button {
+        padding: 10px 18px;
+        font-size: 16px;
+        flex-grow: 1; /* Allow buttons to grow evenly */
+    }
+
+    .day-selection {
+        padding: 12px;
+        gap: 6px;
+    }
+
+    .day-button {
+        padding: 7px 14px;
+        font-size: 14px;
+        flex-basis: auto; /* Revert to natural sizing */
+    }
+
+    /* Forms: adjust grid for tablets */
+    .form-grid {
+        grid-template-columns: repeat(2, 1fr); /* Two columns for tablet forms */
+        gap: 14px;
+    }
+
+    .add-period-form {
+        padding: 20px;
+        margin-bottom: 35px;
+    }
+
+    .add-period-form h2 {
+        font-size: 22px;
+        margin-bottom: 14px;
+    }
+
+    .add-button {
+        padding: 11px 22px;
+        font-size: 17px;
+        grid-column: span 2; /* Make add button span two columns */
+    }
+
+    /* Table responsiveness - Revert to traditional table for tablets */
+    .table-wrapper {
+        overflow-x: auto; /* Enable horizontal scroll if content overflows */
+    }
+
+    table {
+        display: table; /* Revert to default table display */
+        min-width: 700px; /* Ensure minimum width to prevent squishing */
+    }
+
+    thead {
+        display: table-header-group; /* Show header */
+    }
+
+    tbody, tr {
+        display: table-row-group; /* Revert to default */
+    }
+
+    tbody tr {
+        margin-bottom: 0; /* Remove card spacing */
+        border: none; /* Remove card border */
+        border-radius: 0; /* Remove card border-radius */
+        box-shadow: none; /* Remove card shadow */
+        padding: 0; /* Remove card padding */
+    }
+
+    td {
+        display: table-cell; /* Revert to default table cell display */
+        padding: 12px 18px; /* Adjusted padding for tablet table cells */
+        border-bottom: 1px solid var(--color-gray-200); /* Solid border for table rows */
+        white-space: nowrap; /* Keep content on one line if possible */
+    }
+
+    td::before {
+        content: none; /* Hide data-label pseudo-elements */
+    }
+
+    /* Re-align specific columns for tablet table */
+    td:nth-child(5), td:nth-child(6) { /* Active and Actions columns */
+        text-align: center;
+    }
+
+    /* Input fields within table cells for editing */
+    .edit-input {
+        padding: 7px;
+        font-size: 14px;
+    }
+
+    /* Manual section adjustments */
+    .manual-control-group {
+        padding: 18px;
+        margin-bottom: 18px;
+    }
+    .manual-control-group h3 {
+        font-size: 20px;
+        margin-bottom: 18px;
+    }
+    .ring-bell-button {
+        padding: 14px 28px;
+        font-size: 19px;
+        margin-bottom: 22px;
+    }
+    .hard-switch-toggle-group {
+        padding: 14px;
+    }
+    .hard-switch-toggle-group label {
+        font-size: 15px;
+    }
+    .section-content {
+        font-size: 15px;
+    }
+}

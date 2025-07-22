@@ -1,0 +1,76 @@
+@import url('animation.css');
+
+:root{
+    --primary_color1:rgb(230, 230, 230);
+    --primary_color2:rgb(255, 249, 249);
+    --primary_color_glass:rgba(255, 255, 255, 0.704);
+    --secondary_color:rgb(0, 0, 0);
+    --accent_color:gold;
+    --hyperlink:rgb(0, 128, 255);
+    --error_color:#b62433;
+    --error_bg:#f8d7da;
+    --success_bg:rgb(179, 255, 179);
+    --success_color:rgb(1, 100, 1);
+    --background-color:rgb(250, 239, 175);
+    --accent_color_glass:rgba(255, 217, 0, 0.587);
+}
+
+:root {
+    /* Primary Colors */
+    --color-indigo-700: var(--accent_color);
+    --color-indigo-500: rgb(252, 226, 78);
+    --color-blue-600:var(--color-indigo-500);
+    --color-blue-700: rgb(247, 210, 0);
+    --color-blue-500: rgb(247, 210, 0);
+    --color-blue-400: gold;
+    --color-blue-300: rgb(255, 235, 123);
+    --color-blue-50: rgb(255, 249, 214);
+    --color-blue-200: var(--accent_color);
+    --color-red-600: #dc2626;
+    --color-red-700: #b91c1c;
+    --color-red-500: #ef4444;
+    --color-green-600: #16a34a;
+    --color-green-900: #14532d;
+    --color-green-500: #22c55e;
+
+    /* Neutral Colors */
+    --color-white: #fff;
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f3f4f6;
+    --color-gray-200: #e5e7eb;
+    --color-gray-300: #d1d5db;
+    --color-gray-500: #6b7280;
+    --color-gray-600: #4b5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #333; /* Adjusted from original for body text */
+    --color-gray-900: #1f2937; /* Adjusted from original for strong text */
+    --color-e0e0e0: #e0e0e0; /* Custom border color */
+    --color-black-transparent-10: rgba(0, 0, 0, 0.1);
+    --color-black-transparent-06: rgba(0, 0, 0, 0.06);
+    --color-black-transparent-03: rgba(0, 0, 0, 0.3);
+    --color-black-transparent-006: rgba(0, 0, 0, 0.06); /* for shadow-inner */
+    --color-black-transparent-060: rgba(0, 0, 0, 0.6); /* for modal overlay */
+    --color-blue-transparent-50: rgb(255, 229, 80); /* for focus ring */
+
+    /* New color for deactivated rows */
+    --color-deactivated-bg: #f0f0f0; /* Light gray */
+    --color-deactivated-text: #a0a0a0; /* Darker gray for text */
+
+    /* Day selection button colors */
+    --color-day-button-bg: var(--primary_color2); /* Light indigo */
+    --color-day-button-text: var(--accent_color); /* Indigo-700 */
+    --color-day-button-hover-bg: var(--background-color); /* Lighter indigo on hover */
+    --color-day-button-active-bg: var(--color-indigo-700);
+    --color-day-button-active-text: var(--color-white);
+
+    /* Navigation button colors */
+    --color-nav-button-bg: var(--color-gray-100);
+    --color-nav-button-text: var(--color-indigo-700);
+    --color-nav-button-hover-bg: var(--color-indigo-50);
+    --color-nav-button-active-bg: var(--color-indigo-700);
+    --color-nav-button-active-text: var(--color-white);
+
+    /* Settings section specific colors */
+    --color-settings-bg: #f8faff;
+    --color-settings-border: #dbeafe;
+}

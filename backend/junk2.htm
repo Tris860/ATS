@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="icon" type="image/icon" href="media/logo.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login page</title>
+    <style>
+        :root {
+            --primary_color1: #f0f2f5; /* Light background */
+            --primary_color2: #ffffff; /* Card background */
+            --accent_color: #4CAF50; /* Green accent for buttons/highlights */
+            --secondary_color: #333; /* Dark text */
+            --secondary_color2: rgba(0, 0, 0, 0.1); /* Subtle shadow/text glow */
+            --error_color: #dc3545; /* Red for errors */
+            --error_bg: #f8d7da; /* Light red background for errors */
+            --success_color: #28a745; /* Green for success */
+            --success_bg: #d4edda; /* Light green background for success */
+            --hyperlink: #007bff; /* Blue for links */
+        }
+
+        /* Base styles (for smallest screens, mobile-first) */
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: var(--primary_color1);
+            padding: 10px; /* Base padding for small screens */
+            color: var(--secondary_color);
+        }
+
+        span {
+            font-weight: bold;
+        }
+
+        .wrapper {
+            background: linear-gradient(150deg, var(--primary_color2), var(--primary_color2), var(--accent_color));
+            max-width: 95%; /* Start with a high percentage for small phones */
+            width: 100%;
+            position: fixed; /* Keeps it centered in viewport, but might clip if content overflows */
+            padding: 20px; /* Base padding */
+            border-radius: 16px;
+            border: 2px solid var(--accent_color);
+        }
+
+        #signup {
+            display: none;
+            transform: translateY(-200%); /* This initial transform will be overridden by JS */
+            background: linear-gradient(-150deg, var(--primary_color2), var(--primary_color2), var(--accent_color));
+        }
+
+        .form {
+            margin: 1%; /* Keep small margin */
+            text-shadow: 0 0 10px var(--secondary_color2);
+        }
+
+        .form h1 {
+            font-size: 2em; /* Smaller for mobile */
+            color: var(--accent_color);
+            text-align: center;
+        }
+
+        .form h2 {
+            font-size: 1.4em; /* Smaller for mobile */
+            text-align: center;
+            margin-bottom: 3%;
+        }
+
+        .form hr {
+            background-color: var(--accent_color);
+            color: var(--accent_color);
+            height: 0.2px;
+            border: 0.2px solid var(--accent_color);
+        }
+
+        form {
+            padding: 1%;
+        }
+
+        .form form .MsgBox {
+            display: none; /* Controlled by JavaScript */
+        }
+
+        .form form .error {
+            color: var(--error_color);
+            padding: 8px 10px;
+            text-align: center;
+            border-radius: 5px;
+            background: var(--error_bg);
+            border: 1px solid var(--error_color);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .form form .success {
+            color: var(--success_color);
+            padding: 8px 10px;
+            text-align: center;
+            border-radius: 5px;
+            background: var(--success_bg);
+            border: 1px solid var(--success_color);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .form form .name-details {
+            display: flex;
+        }
+
+        .form form .field {
+            display: flex;
+            margin-bottom: 2%;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .form form .field label {
+            margin-bottom: 1%;
+            font-size: 1em; /* Smaller for mobile */
+        }
+
+        .form form .input input {
+            height: 38px; /* Slightly smaller input height */
+            font-size: 15px;
+            padding: 0 10px;
+            border-radius: 5px;
+            border: 1px solid var(--primary_color1);
+        }
+
+        .form form .input input:hover,
+        .form form .input input:focus {
+            border: 1px solid var(--accent_color);
+        }
+
+        .form form .field input {
+            outline: none;
+        }
+
+        .form form .image input {
+            font-size: 17px;
+        }
+
+        .form form .button input {
+            height: 40px; /* Slightly smaller button height */
+            border: none;
+            color: var(--accent_color);
+            font-size: 1em;
+            background: var(--primary_color2);
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 2% 0%;
+            border: 1px solid var(--accent_color);
+            transition: transform 0.4s ease-in-out,
+                        background-color 0.4s ease-in-out,
+                        font-size 0.4s ease-in-out;
+        }
+
+        .form form .button input[type=submit]:hover {
+            transform: scale(1.05);
+            font-size: 1.1em; /* Adjusted hover font size for mobile */
+            color: var(--primary_color1);
+            border: 2px solid var(--primary_color1);
+            background-color: var(--accent_color);
+        }
+
+        .form .link {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 15px;
+        }
+
+        .form .link a {
+            color: var(--hyperlink);
+        }
+
+        .form .link a:hover {
+            text-decoration: underline;
+        }
+
+        .copyright {
+            width: 100%;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        /* Small devices (phones, 576px and up) */
+        @media (min-width: 576px) {
+            .wrapper {
+                max-width: 400px; /* Fixed width for slightly larger phones */
+                padding: 25px;
+            }
+            .form h1 {
+                font-size: 2.2em;
+            }
+            .form h2 {
+                font-size: 1.5em;
+            }
+            .form form .field label {
+                font-size: 1.1em;
+            }
+            .form form .input input {
+                height: 40px;
+                font-size: 16px;
+            }
+            .form form .button input {
+                height: 42px;
+                font-size: 1.1em;
+            }
+            .form form .button input[type=submit]:hover{
+                font-size:1.2em;
+            }
+            .form .link {
+                font-size: 16px;
+            }
+            .copyright {
+                font-size: 1em;
+            }
+        }
+
+        /* Medium devices (tablets, 768px and up) */
+        @media (min-width: 768px) {
+            .wrapper {
+                max-width: 450px; /* Wider for tablets */
+                padding: 30px;
+            }
+            .form h1 {
+                font-size: 2.5em;
+            }
+            .form h2 {
+                font-size: 1.7em;
+            }
+            .form form .field label {
+                font-size: 1.2em;
+            }
+            .form form .input input {
+                height: 42px;
+            }
+            .form form .button input {
+                height: 45px;
+                font-size: 1.2em;
+            }
+            .form form .button input[type=submit]:hover{
+                font-size:1.3em;
+            }
+            .form .link {
+                font-size: 17px;
+            }
+            .copyright {
+                font-size: 1.05em;
+            }
+        }
+
+        /* Large devices (laptops/desktops, 992px and up) */
+        @media (min-width: 992px) {
+            .wrapper {
+                max-width: 500px; /* Standard desktop width */
+                padding: 35px;
+            }
+            .form h1 {
+                font-size: 2.8em;
+            }
+            .form h2 {
+                font-size: 1.9em;
+            }
+            .form form .input input {
+                height: 45px;
+            }
+            .form form .button input {
+                height: 48px;
+                font-size: 1.3em;
+            }
+            .form form .button input[type=submit]:hover{
+                font-size:1.4em;
+            }
+        }
+
+        /* Extra large devices (large desktops, 1200px and up) */
+        @media (min-width: 1200px) {
+            .wrapper {
+                max-width: 550px; /* Slightly larger for very large screens */
+                padding: 40px;
+            }
+            .form h1 {
+                font-size: 3em;
+            }
+            .form h2 {
+                font-size: 2em;
+            }
+            .form form .input input {
+                height: 50px;
+            }
+            .form form .button input {
+                height: 52px;
+                font-size: 1.4em;
+            }
+            .form form .button input[type=submit]:hover{
+                font-size:1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper" id="login">
+        <section class="form signup" id="LoginForm"> 
+            <h1>ATS</h1>
+            <h2>Log into your account🔔</h2>
+            <hr>
+            <form action="" method="POST" enctype="multipart/form-data" autocomplete="off">
+                <div class="MsgBox"></div>
+                <div class="field input">
+                    <label>Email Address</label>
+                    <input type="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="field input">
+                    <label>Password</label>
+                    <input type="password" name="password" id="password" placeholder="Enter new password" required>
+                </div>
+                <div class="field button">
+                    <input type="submit" name="submit" value="Log in">
+                </div>
+                <div class="link">Don't you have account? <a id="SignUptoggle">Create account</a></div>
+                <div class="copyright">Developed by <span>Tris</span> Tech Hub</div>
+            </form>
+        </section>
+    </div>
+    <div class="wrapper" id="signup">
+        <section class="form signup" id="signUpForm"> 
+            <h1>ATS</h1>
+            <h2>Create your account🔔</h2>
+            <hr>
+            <form action="" method="POST" enctype="multipart/form-data" autocomplete="off">
+                <div class="MsgBox"></div>
+                <div class="field input">
+                    <label>Email Address</label>
+                    <input type="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="field input">
+                    <label>Password</label>
+                    <input type="password" name="password" id="password_signup" placeholder="Enter new password" required>
+                </div>
+                <div class="field input">
+                    <label>Confirm Password</label>
+                    <input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm password" required>
+                </div>
+                <div class="field button">
+                    <input type="submit" name="submit" value="Sign Up">
+                </div>
+                <div class="link">Already have an account? <a id="LogIntoggle">Login now</a></div>
+                <div class="copyright">Developed by <span>Tris</span> Tech Hub</div>
+            </form>
+        </section>
+    </div>
+    <script src="javascript/api/serverConnector.js"></script>
+    <script src="javascript/index.js"></script>
+</body>
+</html>

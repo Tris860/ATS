@@ -1,0 +1,36 @@
+@media (max-width: 576px) {
+    .wrapper {
+        max-width: 400px; /* Fixed width for slightly larger phones */
+        padding: 25px;
+        height:100vh;
+    }
+    .form{
+        padding: 2%;
+    }
+    .form h1 {
+        font-size: 2.2em;
+    }
+    .form h2 {
+        font-size: 1.5em;
+    }
+    .form form .field label {
+        font-size: 1.1em;
+    }
+    .form form .input input {
+        height: 40px;
+        font-size: 16px;
+    }
+    .form form .button input {
+        height: 42px;
+        font-size: 1.1em;
+    }
+    .form form .button input[type=submit]:hover{
+        font-size:1.2em;
+    }
+    .form .link {
+        font-size: 16px;
+    }
+    .copyright {
+        font-size: 1em;
+    }
+}
