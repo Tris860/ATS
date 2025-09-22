@@ -3,9 +3,9 @@ const signupForm = document.getElementById('signUpForm')?.querySelector('form');
 const LoginErrorText = document.querySelector('#LoginForm .MsgBox');
 const signupErrorText = document.querySelector('#signUpForm .MsgBox');
 
-// IMPORTANT: Ensure this URL exactly matches your PHP backend's URL.
+// IMPORTANT: Ensure this URL exactly matches your PHP backend' s URL.
 // Based on your HTML, it's 'http://localhost/timetable_app/timetable_api.php'
-const PHP_API_URL = 'http://localhost:3000/final/backend/main.php';
+const PHP_API_URL = 'http://localhost:3000/backend/main.php';
 
 
 

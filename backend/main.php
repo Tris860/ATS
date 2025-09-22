@@ -70,6 +70,7 @@ try {
 
     // Instantiate all necessary managers
     $userManager = new User($conn);
+    $timeChecker = new TimeChecker($conn);
     $timetableManager = new TimetableManager($conn);
     $commander = new Commander($conn); // Instantiate Commander as it's part of manager.php
 
@@ -346,7 +347,47 @@ try {
                 $response = ["success" => false, "message" => "Invalid request method for delete. Use POST."];
             }
             break;
+        case 'is_current_time_in_period':
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                    $response = $timeChecker->isCurrentTimeInPeriod();
+                        //  $response = ["success" => true, "message" => "SHIMO method for change email. Use POST."];
+                } else {
+                    http_response_code(405);
+                        $response = ["success" => false, "message" => "Invalid request method for change email. Use POST."];
+                    }
+        break;
+        case 'save_timezone':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    $response = ["success" => false, "message" => "Not logged in to save timezone."];
+                    http_response_code(401); // Unauthorized
+                    break;
+                }
+                $timezone = $requestData['timezone'] ?? '';
+                if (empty($timezone)) {
+                    throw new InvalidArgumentException("Timezone is required.");
+                }
+                $response = $userManager->saveTimezone($loggedInUserId, $timezone);
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method for save timezone. Use POST."];
+            }
+        break;
+        case 'get_timezone':
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    $response = ["success" => false, "message" => "Not logged in to get timezone."];
+                    http_response_code(401); // Unauthorized
+                    break;
+                }
+                $response = $userManager->getTimezone($loggedInUserId);
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method for get timezone. Use GET."];
+            }
+        break;
 
+        
         default:
             http_response_code(400); // Bad Request
             $response = ["success" => false, "message" => "Unknown action: " . ($action === '' ? '[empty]' : $action)];

@@ -1,7 +1,7 @@
 
         // Define your PHP backend endpoint URL
         // IMPORTANT: Replace this with the actual URL to your PHP script!
-        const PHP_API_URL = 'http://localhost:3000/final/backend/main.php';
+        const PHP_API_URL = 'http://localhost:3000/backend/main.php';
 
         const timetableBody = document.getElementById('timetableBody');
         const newNameInput = document.getElementById('newName');
@@ -121,7 +121,7 @@
                     isHardSwitchEnabled = data.hard_switch_enabled;
                     toggleHardSwitch.checked = isHardSwitchEnabled;
                     applyHardSwitchState(); // Apply visual state for hard switch
-
+                   
                     // Store user ID if available (backend doesn't send it directly in get_user_email, but it's good practice)
                     // For now, we rely on session on backend. If frontend needs userId, backend should provide it.
                     // Assuming currentUserId is managed by login/register on frontend.
@@ -136,7 +136,27 @@
                 await showCustomModal("Network Error", "Could not fetch user data. Please check your network connection and backend URL.");
             }
         };
+        const fetchTimezone = async () =>{
+            const timezoneSelect = document.getElementById('timezoneSelect');
+    
+            try {
+              const response = await fetch(`${PHP_API_URL}?action=get_timezone`);
+              const data = await response.json();
 
+               if (data.success === true && data.message) {
+                const savedTimezone = data.message.trim();
+                  // Find the option with the matching value and set it as selected
+                  const optionToSelect = timezoneSelect.querySelector(`option[value="${savedTimezone}"]`);
+                  if (optionToSelect) {
+                     optionToSelect.selected = true;
+                   } else {
+                     console.warn('Saved timezone not found in the dropdown list:', data.timezone);
+                   }
+                 }
+                } catch (error) {
+                  console.error('Error fetching user timezone:', error);
+                }
+        }
         /**
          * Applies the visual state of the timetable section based on isTimetableEnabled.
          */
@@ -164,17 +184,7 @@
          * Applies the visual state of the manual bell controls based on isHardSwitchEnabled.
          */
         const applyHardSwitchState = () => {
-            if (isHardSwitchEnabled) {
-                ringBellBtn.disabled = false;
-                ringBellBtn.style.filter = 'none'; // Remove grayscale if applied
-                ringBellBtn.style.opacity = '1';
-                ringBellBtn.style.cursor = 'pointer';
-            } else {
-                ringBellBtn.disabled = true;
-                ringBellBtn.style.filter = 'grayscale(100%)'; // Grayscale effect
-                ringBellBtn.style.opacity = '0.6';
-                ringBellBtn.style.cursor = 'not-allowed';
-            }
+           return
         };
 
 
@@ -293,7 +303,7 @@
             loadingMessage.classList.remove('hidden');
             try {
                 const url = `${PHP_API_URL}?action=get_all&day=${encodeURIComponent(currentDay)}`;
-                console.log('Fetching periods from:', url); // Log the URL being fetched
+         // Log the URL being fetched
 
                 const response = await fetch(url);
 
@@ -304,8 +314,7 @@
                 }
 
                 const data = await response.json();
-                console.log('Backend response data:', data); // Log the parsed JSON data
-                console.log('Periods array for rendering:', data.periods); // Log the periods array specifically
+// Log the periods array specifically
 
                 if (data.success) {
                     data.periods.sort((a, b) => {
@@ -616,7 +625,7 @@
             try {
                 // Include 'action' in the JSON body for change_password
                 const payload = { action: 'change_password', current_password: currentPassword, new_password: newPassword };
-                console.log('Sending change_password payload:', payload);
+            
                 const response = await fetch(PHP_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -652,7 +661,7 @@
             try {
                 // Include 'action' in the JSON body for change_email
                 const payload = { action: 'change_email', current_password: currentPassword, new_email: newEmail };
-                console.log('Sending change_email payload:', payload);
+           
                 const response = await fetch(PHP_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -677,7 +686,7 @@
                 try {
                     // Send the action in the JSON body for POST requests
                     const payload = { action: 'logout' };
-                    console.log('Sending logout payload:', payload);
+                   
                     const response = await fetch(PHP_API_URL, { // URL without query string
                         method: 'POST', 
                         headers: { 
@@ -696,7 +705,7 @@
                     }
 
                     const data = await response.json(); // Parse JSON response
-                    console.log('Parsed JSON:', data);
+                  
 
                     if (data.success) {
                         await showCustomModal("Success", data.message);
@@ -718,7 +727,7 @@
             try {
                 // Include 'action' in the JSON body for toggle_timetable_visibility
                 const payload = { action: 'toggle_timetable_visibility', enabled: enabled };
-                console.log('Sending toggle_timetable_visibility payload:', payload);
+               
                 const response = await fetch(PHP_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -758,14 +767,19 @@
 
                 // Include 'action' in the JSON body for ring_bell
                 const payload = { action: 'ring_bell' };
-                console.log('Sending ring_bell payload:', payload);
+              
                 const response = await fetch(PHP_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 const data = await response.json();
-                await showCustomModal(data.success ? "Bell Ring" : "Error", data.message);
+                if (data.success) {
+                    // Send the message "on" through the WebSocket
+                     await sendMessage("AUTO_ON");
+                     await showCustomModal(data.success ? "Bell Ring" : "Error", data.message);
+                   }
+                
             } catch (error) {
                 console.error('Error ringing bell:', error);
                 await showCustomModal("Network Error", "Could not ring bell. Please check your network connection.");
@@ -778,7 +792,7 @@
             try {
                 // Include 'action' in the JSON body for toggle_hard_switch
                 const payload = { action: 'toggle_hard_switch', enabled: enabled };
-                console.log('Sending toggle_hard_switch payload:', payload);
+          
                 const response = await fetch(PHP_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -787,7 +801,8 @@
                 const data = await response.json();
                 if (data.success) {
                     isHardSwitchEnabled = enabled; // Update global state
-                    applyHardSwitchState(); // Apply visual changes
+                    applyHardSwitchState(); // Apply visual change
+                    await sendMessage(enabled ? "HARD_ON" : "HARD_OFF"); // Notify server of hard switch state
                     await showCustomModal("Success", data.message);
                 } else {
                     // Revert toggle state if backend update failed
@@ -800,10 +815,112 @@
                 await showCustomModal("Network Error", "Could not toggle hard switch. Please check your network connection.");
             }
         };
+        timezoneSelect.onchange = async (e) => {
+    const selectedTimezone = e.target.value;
+    try {
+        // Construct the payload with the new action and selected timezone
+        const payload = { 
+            action: 'save_timezone', 
+            timezone: selectedTimezone 
+        };
+       
 
+        // Send the payload to the PHP backend
+        const response = await fetch(PHP_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+
+        if (data.success) {
+            // Display a success message to the user
+            await showCustomModal("Success", data.message);
+        } else {
+            // Display an error and do not revert the UI, as the user's choice is still shown
+            await showCustomModal("Error", data.message);
+        }
+    } catch (error) {
+        console.error('Error saving timezone:', error);
+        await showCustomModal("Network Error", "Could not save timezone. Please check your network connection.");
+    }
+    
+};
+const wsUrl = 'ws://192.168.198.177:4000'; // Change this to your Node.js server address
+let ws = null; // WebSocket instance
+
+// --- Core Functions ---
+
+/**
+ * Manages the WebSocket connection. This function should be called once on page load.
+ */
+async function sendMessage(message) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(message);
+    } else {
+        await showCustomModal('Network Error: ', "Couldn't Connect to the server. Please refresh the page to try again.");
+        // Optionally, attempt to reconnect here as well
+        connectWebSocket();
+    }
+}
+function connectWebSocket() {
+    const Status_indicator=document.getElementById('ServerIndicator'); // Disable button until connection is established   
+    // Prevent multiple connections
+    if (ws) {
+        ws.close();
+    }
+
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+        Status_indicator.style.color='#00ff00';
+        
+    };
+
+    // ws.onmessage = async (event) => {
+    //      await showCustomModal('Server Message', event.data);
+
+    // };
+
+    ws.onclose = async (event) => {
+        Status_indicator.style.color='#ff0000';
+        await showCustomModal('Server Message', event.data);
+        
+    };
+
+    ws.onerror = async (error) => {
+        await showCustomModal('Network Error: ', error.message || error);
+    };
+}
+
+/**
+ * Sends a message via the WebSocket.
+ * @param {string} message The message to send.
+ */
+async function sendMessage(message) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(message);
+    } else {
+        await showCustomModal('Cannot send message. Not connected.');
+        // Optionally, attempt to reconnect here as well
+        connectWebSocket();
+    }
+}
+
+
+
+// --- Main Event Handlers ---
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Automatically connect to the WebSocket when the page is fully loaded
+    connectWebSocket();
+})       
 
         // Initial setup when the window loads
         window.onload = async () => {
+            connectWebSocket();
+            await fetchTimezone();
             await fetchUserEmailAndSettings(); // Fetch and display user email and settings (including hard switch)
             renderDaySelectionButtons(); // Render day buttons
             showSection('timetableSection'); // Show timetable section by default (will apply visibility based on fetched setting)

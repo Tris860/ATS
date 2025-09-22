@@ -1,7 +1,5 @@
 @import url('initial.css');
-@import url('timetableDesktop.css');
-@import url('timetablePhone.css');
-@import url('timetableTablet.css');
+
 
 
 body {
@@ -13,7 +11,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: flex-start; /* Align to top for better content flow */
-    padding: 20px;
+
     box-sizing: border-box;
     color: var(--color-gray-800);
 }
@@ -25,6 +23,7 @@ body {
     box-shadow: 0 10px 25px var(--color-black-transparent-10), 0 5px 10px var(--color-black-transparent-06); /* shadow-2xl */
     border-radius: 12px; /* rounded-xl */
     padding: 32px; /* p-8 */
+    min-height:100vh;
     border: 1px solid var(--color-e0e0e0); /* border-gray-200 */
     box-sizing: border-box;
 }
@@ -600,6 +599,7 @@ td:nth-child(4), td:nth-child(5) {
     color: var(--color-blue-500);
 }
 
+
 .ring-bell-button {
     background-color: var(--color-green-600);
     color: var(--color-white);
@@ -650,4 +650,45 @@ td:nth-child(4), td:nth-child(5) {
     font-weight: 500;
     color: var(--color-gray-700);
     margin-bottom: 0; /* Override form-field label margin */
+}
+.timezone-select {
+    -webkit-appearance: none; /* Removes default iOS styling */
+    -moz-appearance: none;    /* Removes default Firefox styling */
+    appearance: none;         /* Removes default browser styling */
+
+    width: 80%;
+    padding: 12px 15px;
+    font-size: 16px;
+    font-family: inherit; /* Ensures consistent font with the rest of your app */
+    color: #333;
+    background-color: #f4f4f4;
+    border: 1px solid #ddd;
+    border-radius: 8px; /* Softens corners */
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    
+    cursor: pointer;
+}
+
+/* Add a custom arrow icon for a cleaner look */
+/* Use a pseudo-element on the container to position the arrow */
+.select-container {
+    position: relative;
+}
+
+.select-container::after {
+    content: '▼'; /* Unicode character for a down arrow */
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #888;
+    pointer-events: none; /* Ensures clicks go through to the select element */
+}
+
+/* Style the select tag when it's focused */
+.timezone-select:focus {
+    border-color: #007bff; /* Highlight with a brand color */
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
 }

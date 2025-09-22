@@ -74,3 +74,12 @@
     --color-settings-bg: #f8faff;
     --color-settings-border: #dbeafe;
 }
+.copyright {
+    text-align: center;
+    font-size: 0.9em;
+    color: var(--secondary_color);
+    margin-top: 20px;
+}
+.copyright span {
+    color: var(--success_color);;
+}

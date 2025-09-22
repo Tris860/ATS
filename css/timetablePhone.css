@@ -1,6 +1,7 @@
 @media (max-width: 768px) {
     body {
         padding: 10px;
+        background-color: aliceblue;
     }
 
     .container {
@@ -19,7 +20,8 @@
         margin-right: 8px;
     }
 
-    .user-email-display {
+    .user-email-display  {
+        text-align: center;
         font-size: 12px;
         margin-bottom: 10px;
     }

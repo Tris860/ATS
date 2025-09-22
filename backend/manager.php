@@ -251,7 +251,7 @@ class User {
             return ["success" => false, "message" => "Failed to update timetable visibility."];
         }
     }
-
+     
     /**
      * Toggles the hard switch setting for a user.
      *
@@ -266,7 +266,7 @@ class User {
         if ($stmt->execute()) {
             $_SESSION['hard_switch_enabled'] = $enabled; // Update session
             $stmt->close();
-            return ["success" => true, "message" => "Hard switch updated."];
+            return ["success" => true, "message" => "Hard switch updated. ", "state" => $enabled ];
         } else {
             error_log("Hard switch update error: " . $stmt->error);
             $stmt->close();
@@ -280,6 +280,36 @@ class User {
      * @param int $userId The ID of the user.
      * @return array|null User settings or null if user not found.
      */
+    public function getTimezone(int $userId){
+        $stmt = $this->conn->prepare("SELECT timezone FROM users WHERE id_users = ?");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $settings = $result->fetch_assoc();
+        $stmt->close();
+
+        return ["success" => true, "message" => $settings['timezone'] ?? null];
+    }
+    public function saveTimezone(int $userId, string $timezone): array {
+       // 1. Prepare the SQL statement to update the timezone for a specific user.
+       // The '?' are placeholders to prevent SQL injection.
+       $stmt = $this->conn->prepare("UPDATE users SET timezone = ? WHERE id_users = ?");
+
+       // 2. Bind the parameters to the placeholders.
+      // 's' for the string ($timezone) and 'i' for the integer ($userId).
+       $stmt->bind_param("si", $timezone, $userId);
+
+       // 3. Execute the statement and check for success.
+       if ($stmt->execute()) {
+           $stmt->close();
+           return ["success" => true, "message" => "Timezone updated successfully."];
+        } else {
+           // Log the specific error for debugging purposes.
+           error_log("Timezone update error: " . $stmt->error);
+           $stmt->close();
+            return ["success" => false, "message" => "Failed to update timezone."];
+        }
+}
     public function getUserSettings(int $userId): ?array {
         $stmt = $this->conn->prepare("SELECT email, timetable_enabled, hard_switch_enabled FROM users WHERE id_users = ?");
         $stmt->bind_param("i", $userId);
@@ -295,9 +325,6 @@ class User {
         return $settings;
     }
 }
-
-
-
 
 // TimetableManager.php
 
@@ -743,5 +770,65 @@ class Commander{
             return ['success' => false, 'message' => 'An error occurred while updating hard switch status.'];
         }
     }
+}
+
+class TimeChecker{
+    private $conn;
+
+    /**
+     * Constructor for the User class.
+     *
+     * @param mysqli $conn The database connection object.
+     */
+    public function __construct(mysqli $conn) {
+        $this->conn = $conn;
+    }
+    public function isCurrentTimeInPeriod() {
+        $role = 'Admin'; // Replace with a dynamic user ID
+        $stmt_timezone = $this->conn->prepare("SELECT timezone FROM users WHERE role = ?");
+        $stmt_timezone->bind_param('s', $role);
+        $stmt_timezone->execute();
+        $result_timezone = $stmt_timezone->get_result();
+        $userTimezone = $result_timezone->fetch_assoc()['timezone'] ?? 'Africa/Kigali';
+        $stmt_timezone->close();
+        date_default_timezone_set($userTimezone);
+        $currentDay = date('l'); // Get current day of the week (e.g., 'Monday')
+        $currentTime = date('H:i'); // Get current time in HH:MM:SS format
+        $response["success"] = false;
+        $response["message"] = "No active periods found for today.";
+        try {
+             // 1. Check user visibility
+             $stmt_users = $this->conn->prepare("SELECT COUNT(*) FROM users WHERE timetable_enabled = 1 OR hard_switch_enabled = 1");
+             $stmt_users->execute();
+             $result_users = $stmt_users->get_result();
+             $count = $result_users->fetch_row()[0];
+    
+            if ($count > 0) {
+               // 2. If user is enabled, check the time periods
+               $currentDay = strtolower(date('l'));
+               $currentTime = date('H:i');
+        
+               $stmt_periods = $this->conn->prepare("SELECT name, start_time FROM periods WHERE day_of_week = ? AND active = 1");
+               $stmt_periods->bind_param('s', $currentDay);
+               $stmt_periods->execute();
+               $result_periods = $stmt_periods->get_result();
+
+               while ($period = $result_periods->fetch_assoc()) {
+                $db_start_time = date('H:i', strtotime($period['start_time']));
+                  if ($currentTime == $db_start_time) {
+                    $response["success"] = true;
+                    $response["message"] = "It's time for period: " . $period['name'];
+                    break; // Exit the loop once a match is found
+                    }
+                 }
+                 
+             }
+        } catch (Exception $e) {
+          // Handle database errors
+          $response['status'] = 'error';
+          $response['message'] = "Database error: " . $e->getMessage();
+        } 
+        return $response;
+    }       
 }
 ?>

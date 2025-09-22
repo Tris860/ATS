@@ -94,7 +94,7 @@
             <h2 class="section-title">Manual Bell Control</h2>
             <div class="manual-control-group">
                 <h3>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M12 2v2"/></svg>
+                    <svg id="ServerIndicator" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M12 2v2"/></svg>
                     Ring Bell Now
                 </h3>
                 <button id="ringBellBtn" class="ring-bell-button">
@@ -118,7 +118,7 @@
                     </label>
                 </div>
                 <p class="section-content" style="font-size: 14px; margin-top: 15px; color: var(--color-gray-600);">
-                    When the hard switch is OFF, the bell system (both manual and automated timetable rings) will be deactivated.
+                    When the hard switch is OFF, the bell system (both manual and automated timetable rings) will be Activated.
                 </p>
             </div>
         </div>
@@ -175,6 +175,58 @@
                     </label>
                 </div>
             </div>
+            <div class="settings-form-group">
+               <h3>Timezone Settings</h3>
+               <div class="form-field" style="flex-direction: row; align-items: center; justify-content: space-between;">
+                   <label for="timezoneSelect" style="margin-bottom: 0;">Select Timezone</label>
+                <select id="timezoneSelect" class="timezone-select">
+                   <optgroup label="Africa">
+                      <option value="Africa/Cairo">(UTC+02:00) Cairo</option>
+                      <option value="Africa/Johannesburg">(UTC+02:00) Johannesburg</option>
+                      <option value="Africa/Lagos">(UTC+01:00) Lagos</option>
+                      <option value="Africa/Nairobi">(UTC+03:00) Nairobi</option>
+                      <option value="Africa/Casablanca">(UTC+00:00) Casablanca</option>
+                      <option value="Africa/Algiers">(UTC+01:00) Algiers</option>
+                      <option value="Africa/Kigali">(UTC+02:00) Kigali</option>
+                   </optgroup>
+                   <optgroup label="America">
+                       <option value="America/New_York">(UTC-05:00) Eastern Time - New York</option>
+                       <option value="America/Chicago">(UTC-06:00) Central Time - Chicago</option>
+                       <option value="America/Denver">(UTC-07:00) Mountain Time - Denver</option>
+                       <option value="America/Los_Angeles">(UTC-08:00) Pacific Time - Los Angeles</option>
+                       <option value="America/Anchorage">(UTC-09:00) Alaska Time - Anchorage</option>
+                       <option value="America/Argentina/Buenos_Aires">(UTC-03:00) Buenos Aires</option>
+                       <option value="America/Sao_Paulo">(UTC-03:00) Sao Paulo</option>
+                   </optgroup>
+                   <optgroup label="Asia">
+                      <option value="Asia/Tokyo">(UTC+09:00) Tokyo</option>
+                      <option value="Asia/Shanghai">(UTC+08:00) Shanghai</option>
+                      <option value="Asia/Kolkata">(UTC+05:30) Kolkata</option>
+                      <option value="Asia/Dubai">(UTC+04:00) Dubai</option>
+                      <option value="Asia/Bangkok">(UTC+07:00) Bangkok</option>
+                   </optgroup>
+                   <optgroup label="Europe">
+                      <option value="Europe/London">(UTC+00:00) London</option>
+                      <option value="Europe/Paris">(UTC+01:00) Paris</option>
+                      <option value="Europe/Berlin">(UTC+01:00) Berlin</option>
+                      <option value="Europe/Moscow">(UTC+03:00) Moscow</option>
+                   </optgroup>
+                   <optgroup label="Australia">
+                      <option value="Australia/Sydney">(UTC+10:00) Sydney</option>
+                      <option value="Australia/Melbourne">(UTC+10:00) Melbourne</option>
+                      <option value="Australia/Perth">(UTC+08:00) Perth</option>
+                   </optgroup>
+                   <optgroup label="Pacific">
+                     <option value="Pacific/Honolulu">(UTC-10:00) Honolulu</option>
+                     <option value="Pacific/Auckland">(UTC+12:00) Auckland</option>
+                   </optgroup>
+                   <optgroup label="Other">
+                     <option value="UTC">(UTC+00:00) Coordinated Universal Time</option>
+                      <option value="GMT">(UTC+00:00) Greenwich Mean Time</option>
+                   </optgroup>
+               </select>
+             </div>
+        </div>
 
             <div class="settings-form-group" style="text-align: center;">
                 <h3>Account Actions</h3>
@@ -184,7 +236,7 @@
                 </button>
             </div>
         </div>
-        <div class="copyright">Developed by <span>Tris</span> Tech Hub</div>
+        <div class="copyright">Developed by <span><b>Tris</b> Tech Hub</span></div>
     </div>
 
     <!-- Custom Modal for Confirmations -->
@@ -199,7 +251,5 @@
         </div>
     </div>
 </body>
-
-<a href="../backend/systemEndpoint.php"></a>
 <script src="../javascript/page.js"></script>
 </html>
