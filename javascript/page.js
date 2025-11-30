@@ -1,8 +1,10 @@
 
         // Define your PHP backend endpoint URL
         // IMPORTANT: Replace this with the actual URL to your PHP script!
-        const PHP_API_URL = 'http://localhost:3000/backend/main.php';
-
+        let previouslySelectedRowId = null;
+        const PHP_API_URL ="https://tristechhub.org.rw/projects/ATS/backend/main.php";
+        let USER_EMAIL = ''; 
+        let WS_URL = ''; // Will be set after fetching user email/session 
         const timetableBody = document.getElementById('timetableBody');
         const newNameInput = document.getElementById('newName');
         const newStartTimeInput = document.getElementById('newStartTime');
@@ -110,8 +112,9 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    USER_EMAIL = data.email || '';
                     userEmailDisplay.textContent = data.email || 'N/A'; // Display email or 'N/A' if empty
-                    
+                    WS_URL = `wss://webserver-ft8c.onrender.com/ws/browser?email=${encodeURIComponent(USER_EMAIL)}`;
                     // Update global timetable enabled state and toggle button
                     isTimetableEnabled = data.timetable_enabled;
                     toggleTimetableVisibility.checked = isTimetableEnabled;
@@ -121,7 +124,7 @@
                     isHardSwitchEnabled = data.hard_switch_enabled;
                     toggleHardSwitch.checked = isHardSwitchEnabled;
                     applyHardSwitchState(); // Apply visual state for hard switch
-                   
+                    connectWebSocket();
                     // Store user ID if available (backend doesn't send it directly in get_user_email, but it's good practice)
                     // For now, we rely on session on backend. If frontend needs userId, backend should provide it.
                     // Assuming currentUserId is managed by login/register on frontend.
@@ -207,7 +210,7 @@
 
                 const row = document.createElement('tr');
                 row.id = `period-${period.id}`;
-                row.className = `transition duration-150 ease-in-out ${period.active ? 'hover:bg-gray-50' : 'deactivated-row'}`;
+                row.className = `transition duration-150 ease-in-out ${period.active ? 'hover:bg-gray-50' : 'deactivated-row'} ${period.current ? 'current-row' : ''} `;
                 row.dataset.editing = 'false';
 
                 row.innerHTML = `
@@ -253,10 +256,12 @@
                     </td>
                 `;
                 timetableBody.appendChild(row);
+
             });
 
             // Re-attach event listeners after rendering
             attachEventListeners();
+            highlightRow(previouslySelectedRowId);
         };
 
         // Function to toggle editing mode for a row
@@ -314,6 +319,8 @@
                 }
 
                 const data = await response.json();
+                const datas = await response.text();
+                console.log("PHP backend response:", datas);
 // Log the periods array specifically
 
                 if (data.success) {
@@ -326,6 +333,7 @@
                     renderTimetable(data.periods);
                 } else {
                     renderTimetable([]); // Clear table on error
+                    console.log('Backend Error:', data.message);
                     await showCustomModal("Backend Error", data.message);
                 }
             } catch (error) {
@@ -756,34 +764,8 @@
 
         // --- Manual Section Functions ---
         ringBellBtn.onclick = async () => {
-            if (!isHardSwitchEnabled) {
-                await showCustomModal("Bell Deactivated", "The bell cannot be rung manually because the hard switch is OFF.");
-                return;
-            }
-
-            try {
-                // No Tone.js specific code here anymore. The bell sound functionality
-                // would need to be implemented separately if desired, without Tone.js.
-
-                // Include 'action' in the JSON body for ring_bell
-                const payload = { action: 'ring_bell' };
-              
-                const response = await fetch(PHP_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await response.json();
-                if (data.success) {
-                    // Send the message "on" through the WebSocket
-                     await sendMessage("AUTO_ON");
-                     await showCustomModal(data.success ? "Bell Ring" : "Error", data.message);
-                   }
-                
-            } catch (error) {
-                console.error('Error ringing bell:', error);
-                await showCustomModal("Network Error", "Could not ring bell. Please check your network connection.");
-            }
+             const command = 'AUTO_ON';
+             SendSignal(command);
         };
 
         // Event listener for the hard switch toggle (specific handler)
@@ -802,7 +784,7 @@
                 if (data.success) {
                     isHardSwitchEnabled = enabled; // Update global state
                     applyHardSwitchState(); // Apply visual change
-                    await sendMessage(enabled ? "HARD_ON" : "HARD_OFF"); // Notify server of hard switch state
+                     SendSignal (enabled ? "HARD_ON" : "HARD_OFF"); // Notify server of hard switch state
                     await showCustomModal("Success", data.message);
                 } else {
                     // Revert toggle state if backend update failed
@@ -812,7 +794,7 @@
             } catch (error) {
                 console.error('Error toggling hard switch:', error);
                 toggleHardSwitch.checked = !enabled; // Revert on network error
-                await showCustomModal("Network Error", "Could not toggle hard switch. Please check your network connection.");
+                await showCustomModal("Network Error", error + "Could not toggle hard switch. Please check your network connection.");
             }
         };
         timezoneSelect.onchange = async (e) => {
@@ -847,82 +829,247 @@
     }
     
 };
-const wsUrl = 'ws://192.168.198.177:4000'; // Change this to your Node.js server address
-let ws = null; // WebSocket instance
+// WebSocket client (no message IDs, no tracking)
+// Replace your existing client script with this. Ensure showCustomModal() exists.
 
-// --- Core Functions ---
 
-/**
- * Manages the WebSocket connection. This function should be called once on page load.
- */
-async function sendMessage(message) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(message);
-    } else {
-        await showCustomModal('Network Error: ', "Couldn't Connect to the server. Please refresh the page to try again.");
-        // Optionally, attempt to reconnect here as well
-        connectWebSocket();
-    }
+
+
+// --- Socket + timers ---
+let socket = null;
+let reconnectTimer = null;
+let reconnectDelayMs = 2000;
+
+// --- Indicator helpers ---
+function setServerIndicatorDisconnected() {
+  const el = document.getElementById('ServerIndicator');
+  if (el) el.style.color = '#ff0000'; // red
 }
+function setServerIndicatorServerOnly() {
+  const el = document.getElementById('ServerIndicator');
+  if (el) el.style.color = '#0000ff'; // blue
+}
+function setServerIndicatorDeviceReady() {
+  const el = document.getElementById('ServerIndicator');
+  if (el) el.style.color = '#00ff00'; // green
+}
+
+// --- UI helpers ---
+function notifyUser(title, msg) {
+  if (typeof showCustomModal === 'function') {
+    showCustomModal(title, msg);
+  } else {
+    alert(title + '\n' + msg);
+  }
+}
+
+// --- Friendly status mapper (prevents "STATUS" placeholders) ---
+function friendlyStatus(status) {
+  const s = String(status || '').toUpperCase();
+  if (s === 'CONNECTED' || s === 'READY' || s === 'AVAILABLE') return 'online and ready';
+  if (s === 'AUTHENTICATING' || s === 'CONNECTING') return 'connecting…';
+  if (s === 'DISCONNECTED' || s === 'OFFLINE') return 'offline';
+  return 'unknown';
+}
+
+// --- Softener for ack responses (removes sensitive details) ---
+function softenAck(resp) {
+  const r = String(resp || '');
+  // Success
+  if (r.includes('"status":"ok"') || (r.toLowerCase().includes('command') && r.toLowerCase().includes('sent'))) {
+    return 'Command delivered.';
+  }
+  // Sensitive / technical
+  if (r.includes('502') || r.toLowerCase().includes('bad gateway')) {
+    return "The device didn't respond as expected. Please try again shortly.";
+  }
+  if (r.toLowerCase().includes('failed to connect') || r.toLowerCase().includes('timeout')) {
+    return "The device may be temporarily unreachable. We're retrying in the background.";
+  }
+  if (r.toLowerCase().includes('error') || r.includes('⚠️')) {
+    return "There was a hiccup while sending the command. Please try again.";
+  }
+  // Default
+  return 'Command processed.';
+}
+
+// --- WebSocket connection ---
 function connectWebSocket() {
-    const Status_indicator=document.getElementById('ServerIndicator'); // Disable button until connection is established   
-    // Prevent multiple connections
-    if (ws) {
-        ws.close();
+  if (socket && socket.readyState === WebSocket.OPEN) return;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+
+  socket = new WebSocket(WS_URL);
+
+  socket.onopen = () => {
+    reconnectDelayMs = 2000;
+    // Server connected; device status not yet known
+    setServerIndicatorServerOnly();
+  };
+
+  socket.onmessage = async (event) => {
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch {
+      console.log('WS message (non-JSON):', event.data);
+      return;
     }
 
-    ws = new WebSocket(wsUrl);
+    const type = data.type;
 
-    ws.onopen = () => {
-        Status_indicator.style.color='#00ff00';
-        
-    };
+    if (type === 'device_binding') {
+      const deviceName = data.deviceName;
+      // Soft message
+      notifyUser('Device bound', deviceName ? `Connected to ${deviceName}.` : 'No device bound.');
+      return;
+    }
 
-    // ws.onmessage = async (event) => {
-    //      await showCustomModal('Server Message', event.data);
+    if (type === 'device_status') {
+      const deviceName = data.deviceName || 'Device';
+      const statusRaw = data.status || 'UNKNOWN';
+      const statusText = friendlyStatus(statusRaw);
 
-    // };
+      // Immediate indicator change for ready states
+      const ready = ['CONNECTED', 'READY', 'AVAILABLE'].includes(statusRaw.toUpperCase());
+      if (ready) {
+        setServerIndicatorDeviceReady();
+      } else {
+        setServerIndicatorServerOnly();
+      }
 
-    ws.onclose = async (event) => {
-        Status_indicator.style.color='#ff0000';
-        await showCustomModal('Server Message', event.data);
-        
-    };
+      // Soft, meaningful status (no "STATUS" placeholder)
+      notifyUser('Device status', `${deviceName} is ${statusText}.`);
+      return;
+    }
 
-    ws.onerror = async (error) => {
-        await showCustomModal('Network Error: ', error.message || error);
-    };
+    if (type === 'ack') {
+      const deviceId = data.deviceId || 'Device';
+      const resp = softenAck(data.response);
+      // Soft success-only message
+      notifyUser('System alert', `${deviceId}: ${resp}`);
+      return;
+    }
+
+    if (type === 'error') {
+      // No sensitive details
+      notifyUser('Action failed', 'Something went wrong. Please try again.');
+      return;
+    }
+
+    if (type === 'auto_on_trigger') {
+      const deviceName = data.deviceName || 'Device';
+      const msg = data.message || 'Scheduled ring activated.';
+      notifyUser('Schedule triggered', `${msg}\n${deviceName} was toggled.`);
+      await fetchPeriods();
+      console.log('Auto ON Trigger:', msg);
+      return;
+    }
+
+    if (type === 'periods_update') {
+      const periods = Array.isArray(data.periods) ? data.periods : [];
+      renderPeriods(periods);
+      return;
+    }
+
+    console.log('WS message (unhandled type):', data);
+  };
+
+  socket.onclose = (ev) => {
+    setServerIndicatorDisconnected();
+    // No popup on disconnect; silent backoff reconnect
+    reconnectTimer = setTimeout(() => connectWebSocket(), reconnectDelayMs);
+    reconnectDelayMs = Math.min(30000, reconnectDelayMs * 1.5);
+  };
+
+  socket.onerror = (err) => {
+    console.error('WebSocket error', err);
+    setServerIndicatorDisconnected();
+    // No popup on errors
+  };
 }
 
-/**
- * Sends a message via the WebSocket.
- * @param {string} message The message to send.
- */
-async function sendMessage(message) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(message);
+// Close gracefully
+function closeWebSocket() {
+  if (!socket) return;
+  try { socket.close(); } catch (e) {}
+  socket = null;
+}
+
+// --- Sending helpers ---
+function sendJson(payload) {
+  return new Promise((resolve, reject) => {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      // No popup; attempt reconnect silently
+      connectWebSocket();
+      return reject(new Error('NOT_CONNECTED'));
+    }
+    try {
+      socket.send(JSON.stringify(payload));
+      resolve({ sent: true });
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+async function SendSignal(command) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    // Soft message; no sensitive details
+    if (typeof showCustomModal === 'function') {
+      showCustomModal("Connection needed", "Please reconnect and try again.");
     } else {
-        await showCustomModal('Cannot send message. Not connected.');
-        // Optionally, attempt to reconnect here as well
-        connectWebSocket();
+      alert("Connection needed\nPlease reconnect and try again.");
     }
+    return;
+  }
+
+  const payload = {
+    type: 'command',
+    payload: { action: command }
+  };
+
+  try {
+    await sendJson(payload);
+    // Minimal success cue; no raw server JSON
+    notifyUser('Command sent', `Request queued: ${command}.`);
+  } catch (err) {
+    console.error('SendSignal failed:', err);
+    showCustomModal("Action failed", "Unable to send your command. Please try again.");
+  }
 }
 
+// --- Rendering periods ---
+ //--- Highlighting rows ---
+async function highlightRow(newPeriodId, highlightClass = 'current-row') {
+  const newRowId = `period-${newPeriodId}`;
+  const previousRow = previouslySelectedRowId && previouslySelectedRowId !== newRowId
+    ? document.getElementById(previouslySelectedRowId)
+    : null;
+  if (previousRow) previousRow.classList.remove(highlightClass);
+
+  const newRow = document.getElementById(newRowId);
+  if (newRow) {
+    newRow.classList.add(highlightClass);
+    previouslySelectedRowId = newRowId;
+    await fetchPeriods();
+  }
+}
+
+// --- Initial setup ---
+window.onload = async () => {
+
+  await fetchTimezone();
+  await fetchUserEmailAndSettings();
+  renderDaySelectionButtons();
+  showSection('timetableSection');
+};
 
 
-// --- Main Event Handlers ---
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Automatically connect to the WebSocket when the page is fully loaded
-    connectWebSocket();
-})       
 
-        // Initial setup when the window loads
-        window.onload = async () => {
-            connectWebSocket();
-            await fetchTimezone();
-            await fetchUserEmailAndSettings(); // Fetch and display user email and settings (including hard switch)
-            renderDaySelectionButtons(); // Render day buttons
-            showSection('timetableSection'); // Show timetable section by default (will apply visibility based on fetched setting)
-        };
-  
+
+// Add a click listener to the table body
+ 

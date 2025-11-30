@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ATS Web Client</title>
+</head>
+<body>
+  <br />
+<b>Warning</b>:  Parameter 2 to mysqli_stmt::bind_param() expected to be a reference, value given in <b>/home/trishuba/public_html/projects/ATS/backend/manager.php</b> on line <b>485</b><br />
+  <h2>ATS Web Client</h2>
+  <p>Status: <span id="status">Disconnected</span></p>
+  <p>Messages:</p>
+  <pre id="messages"></pre>
+
+  <script>
+    const userEmail = "user@example.com"; // Replace with actual user identity
+    const ws = new WebSocket(`wss://your-server.onrender.com/?user=${encodeURIComponent(userEmail)}`);
+
+    const statusEl = document.getElementById("status");
+    const messagesEl = document.getElementById("messages");
+
+    ws.onopen = () => {
+      statusEl.textContent = "Connected";
+      ws.send("Hello from browser client");
+    };
+
+    ws.onmessage = (event) => {
+      const msg = event.data;
+      messagesEl.textContent += msg + "\n";
+
+      if (msg.startsWith("TIME_MATCHED:")) {
+        // You can trigger UI updates or alerts here
+        alert("Trigger received: " + msg);
+      }
+    };
+
+    ws.onclose = () => {
+      statusEl.textContent = "Disconnected";
+    };
+
+    ws.onerror = (err) => {
+      console.error("WebSocket error:", err);
+    };
+  </script>
+</body>
+</html>

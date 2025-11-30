@@ -50,7 +50,7 @@ require_once 'manager.php';
 // Database connection details
 $servername = "localhost";
 $username = "root";
-$password = "shimo@123flex"; // Your actual password
+$password = ""; // Your actual password
 $dbname = "atsfinal"; // Your actual database name
 
 $conn = null; // Initialize connection variable
@@ -138,8 +138,7 @@ try {
                 http_response_code(405);
                 $response = ["success" => false, "message" => "Invalid request method for login. Use POST."];
             }
-            break;
-
+        break;
         case 'logout':
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $response = $userManager->logout(); // This destroys session
@@ -266,7 +265,7 @@ try {
             // This is a GET request, so get 'day' from $_GET
             $dayFilter = $_GET['day'] ?? null;
             // In a real app, you'd pass $loggedInUserId here to filter periods by user ownership
-            $periods = $timetableManager->getAllPeriods($dayFilter);
+            $periods = $timetableManager->getAllPeriods($dayFilter, $loggedInUserEmail ?? '');
             $response = ["success" => true, "periods" => $periods];
             break;
 
@@ -282,7 +281,7 @@ try {
                 $data = $requestData;
                 // Add user_id to the data before passing to TimetableManager
                 $data['user_id'] = $loggedInUserId; 
-                $insertId = $timetableManager->addPeriod($data);
+                $insertId = $timetableManager->addPeriod($data, $loggedInUserEmail ?? '');
                 $response = ["success" => true, "message" => "Period added successfully with ID: " . $insertId];
             } else {
                 http_response_code(405);
@@ -348,13 +347,13 @@ try {
             }
             break;
         case 'is_current_time_in_period':
-            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-                    $response = $timeChecker->isCurrentTimeInPeriod();
-                        //  $response = ["success" => true, "message" => "SHIMO method for change email. Use POST."];
-                } else {
-                    http_response_code(405);
-                        $response = ["success" => false, "message" => "Invalid request method for change email. Use POST."];
-                    }
+         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+               $response = $timeChecker->checkCurrentTimeInPeriod();
+                // $response = ["success" => true, "message" => "SHIMO method for change email. Use POST."];
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method for change email. Use POST."];
+          }
         break;
         case 'save_timezone':
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -386,8 +385,27 @@ try {
                 $response = ["success" => false, "message" => "Invalid request method for get timezone. Use GET."];
             }
         break;
-
-        
+        case 'wemos_auth':
+            if($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $username = $_POST['username'] ?? null;
+                $password = $_POST['password'] ?? null;
+                $response =$userManager->WEMOS_AUTH($username, $password);
+                //  $response= ["success" => false, "message" => $_POST['password'].' Authentication data (username and password) is missing.'];
+            } else {
+                http_response_code(400); // Bad Request
+                $response= ["success" => false, "message" => 'Authentication data (username and password) is missing.'];
+            }
+        break;
+        case 'get_user_device':
+          if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+              $email = $_POST['email'] ?? null;
+              $devicename = $userManager->getAssignedDevice($email); // Custom method
+              $response = $devicename ? ["success" => true, "device_name" => $devicename] : ["success" => false, "message" => "No device assigned."];
+            } else {
+               http_response_code(405);
+               $response = ["success" => false, "message" => "Invalid request method for get_user_device. Use POST."];
+            }
+        break;
         default:
             http_response_code(400); // Bad Request
             $response = ["success" => false, "message" => "Unknown action: " . ($action === '' ? '[empty]' : $action)];

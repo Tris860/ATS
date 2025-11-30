@@ -93,6 +93,80 @@ class User {
             return ["success" => false, "message" => "Invalid email or password."];
         }
     }
+    public function WEMOS_AUTH(string $name, string $passkey) {
+        if (empty($name) || empty($passkey)) {
+            return ["success" => false, "message" => "name and password cannot be empty."];
+        }
+
+        $stmt = $this->conn->prepare("SELECT * FROM hardware WHERE name = ?");
+        $stmt->bind_param("s", $name);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 1) {
+            $device = $result->fetch_assoc();
+            if (password_verify($passkey, $device['passkey'])) {
+                // return ["success" => false, "message" =>  $device['passkey']."Invalid name or password."];
+                $stmt = $this->conn->prepare("SELECT timetable_enabled,hard_switch_enabled FROM users WHERE hardware_id = ?");
+                $stmt->bind_param("i", $device['id' ]);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                if ($result->num_rows === 1) {
+                    $user = $result->fetch_assoc();
+                    // Set session variables
+                    $status=[];
+                    $status['device_name']= $device['name'];
+                    $status['timetable_enabled'] = (bool)$user['timetable_enabled'];
+                    $status['hard_switch_enabled'] = (bool)$user['hard_switch_enabled'];
+
+                    $stmt->close(); 
+                    return ["success" => true, "data" => $status ,"message" => "Login successful!"];
+                    
+                } else {
+                   $stmt->close();
+                   return ["success" => false, "message" => "No user assigned to this device."];
+                }
+            } else {
+               $stmt->close();
+               return ["success" => false, "message" => "Invalid password."];
+            }
+        }
+    }
+    public function getAssignedDevice(string $email): ?string {
+        if (empty($email)) {
+            return null;
+        }
+
+        $stmt = $this->conn->prepare("SELECT hardware_id FROM users WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            $user['hardware_id'];
+
+            $stmt = $this->conn->prepare("SELECT name FROM hardware WHERE id = ?");
+            $stmt->bind_param("i", $user['hardware_id']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $device = $result->fetch_assoc();
+            if ($result->num_rows === 1) {
+                $stmt->close();
+                return $device['name'];
+            }
+            else {
+                $stmt->close();
+                return null;
+        }
+        } else {
+            $stmt->close();
+            return null;
+        }
+    } 
+
 
     /**
      * Logs out the current user.
@@ -309,7 +383,7 @@ class User {
            $stmt->close();
             return ["success" => false, "message" => "Failed to update timezone."];
         }
-}
+  }
     public function getUserSettings(int $userId): ?array {
         $stmt = $this->conn->prepare("SELECT email, timetable_enabled, hard_switch_enabled FROM users WHERE id_users = ?");
         $stmt->bind_param("i", $userId);
@@ -351,6 +425,20 @@ class TimetableManager {
             throw new Exception("Error loading character set utf8mb4: " . $this->conn->error);
         }
     }
+    /**
+     * Helper function to pass parameters by reference for bind_param.
+     * This is necessary for PHP versions older than 8.1 when using call_user_func_array with bind_param.
+     *
+     * @param array $arr The array of parameters.
+     * @return array The array with values passed by reference.
+     */
+    private function refValues(array $arr) {
+        $refs = [];
+        foreach ($arr as $key => $value) {
+            $refs[$key] = &$arr[$key]; // Create a reference to each value
+        }
+        return $refs;
+    }
 
     /**
      * Fetches all periods, optionally filtered by day.
@@ -359,19 +447,21 @@ class TimetableManager {
      * @return array An array of period data.
      * @throws mysqli_sql_exception If a database error occurs during statement preparation or execution.
      */
-    public function getAllPeriods(?string $dayOfWeek = null): array {
+    public function getAllPeriods(?string $dayOfWeek = null, string $owner): array {
         $periods = [];
-        $sql = "SELECT id, name, day_of_week, start_time, end_time, active FROM periods";
-        $params = [];
-        $types = "";
+        $sql = "SELECT * FROM periods WHERE owner = ?";
+        $params = [$owner];
+        $types = "s";
 
-        // Conditionally add WHERE clause if a specific day is requested
-        if ($dayOfWeek && $dayOfWeek !== 'All Days') { // 'All Days' is a frontend concept, not a DB filter
-            $sql .= " WHERE day_of_week = ?";
+        // Conditionally add AND clause if a specific day is requested
+        if ($dayOfWeek && $dayOfWeek !== 'All Days') {
+            $sql .= " AND day_of_week = ?";
             $params[] = $dayOfWeek;
-            $types .= "s"; // 's' for string type
+            $types .= "s";
         }
-        $sql .= " ORDER BY start_time ASC, name ASC"; // Order by time then name for consistent display
+
+        $sql .= " ORDER BY start_time ASC, name ASC";
+        // Order by time then name for consistent display
 
         // --- DEBUG LOGGING ---
         error_log("DEBUG-TM: getAllPeriods - Generated SQL: " . $sql);
@@ -426,7 +516,7 @@ class TimetableManager {
      * @throws InvalidArgumentException If input data is invalid (e.g., missing fields, invalid format, logical errors).
      * @throws mysqli_sql_exception If a database error occurs during statement preparation or execution.
      */
-    public function addPeriod(array $data): int {
+    public function addPeriod(array $data, string $owner): int {
         // 1. Validate incoming data (Domain Integrity)
         $requiredFields = ['name', 'day_of_week', 'start_time', 'end_time']; // Corrected field names
         foreach ($requiredFields as $field) {
@@ -465,7 +555,7 @@ class TimetableManager {
         }
 
         // 2. Prepare and execute SQL INSERT statement
-        $sql = "INSERT INTO periods (name, day_of_week, start_time, end_time, active) VALUES (?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO periods (name, day_of_week, start_time, end_time, active,owner) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
 
         if ($stmt === false) {
@@ -473,7 +563,7 @@ class TimetableManager {
         }
 
         $intActive = $active ? 1 : 0; // Convert boolean to integer for DB storage
-        $stmt->bind_param("ssssi", $name, $dayOfWeek, $startTime, $endTime, $intActive);
+        $stmt->bind_param("ssssis", $name, $dayOfWeek, $startTime, $endTime, $intActive, $owner);
 
         if (!$stmt->execute()) {
             throw new mysqli_sql_exception("Error adding period: " . $stmt->error);
@@ -656,7 +746,7 @@ class TimetableManager {
      * @throws mysqli_sql_exception If a database error occurs.
      */
     private function getPeriodById(int $id): ?array {
-        $sql = "SELECT id, name, day_of_week, start_time, end_time, active FROM periods WHERE id = ?";
+        $sql = "SELECT * FROM periods WHERE id = ?";
         $stmt = $this->conn->prepare($sql);
         if ($stmt === false) {
             throw new mysqli_sql_exception("Failed to prepare statement for fetching single period: " . $this->conn->error);
@@ -671,25 +761,13 @@ class TimetableManager {
         $stmt->close();
 
         if ($period) {
+            $period['current'] = (bool)$period['current']; // Convert current to boolean
             $period['active'] = (bool)$period['active']; // Convert active to boolean
         }
         return $period;
     }
 
-    /**
-     * Helper function to pass parameters by reference for bind_param.
-     * This is necessary for PHP versions older than 8.1 when using call_user_func_array with bind_param.
-     *
-     * @param array $arr The array of parameters.
-     * @return array The array with values passed by reference.
-     */
-    private function refValues(array $arr) {
-        $refs = [];
-        foreach ($arr as $key => $value) {
-            $refs[$key] = &$arr[$key]; // Create a reference to each value
-        }
-        return $refs;
-    }
+    
 
     /**
      * Destructor for TimetableManager.
@@ -783,52 +861,135 @@ class TimeChecker{
     public function __construct(mysqli $conn) {
         $this->conn = $conn;
     }
-    public function isCurrentTimeInPeriod() {
-        $role = 'Admin'; // Replace with a dynamic user ID
-        $stmt_timezone = $this->conn->prepare("SELECT timezone FROM users WHERE role = ?");
-        $stmt_timezone->bind_param('s', $role);
-        $stmt_timezone->execute();
-        $result_timezone = $stmt_timezone->get_result();
-        $userTimezone = $result_timezone->fetch_assoc()['timezone'] ?? 'Africa/Kigali';
-        $stmt_timezone->close();
-        date_default_timezone_set($userTimezone);
-        $currentDay = date('l'); // Get current day of the week (e.g., 'Monday')
-        $currentTime = date('H:i'); // Get current time in HH:MM:SS format
-        $response["success"] = false;
-        $response["message"] = "No active periods found for today.";
-        try {
-             // 1. Check user visibility
-             $stmt_users = $this->conn->prepare("SELECT COUNT(*) FROM users WHERE timetable_enabled = 1 OR hard_switch_enabled = 1");
-             $stmt_users->execute();
-             $result_users = $stmt_users->get_result();
-             $count = $result_users->fetch_row()[0];
-    
-            if ($count > 0) {
-               // 2. If user is enabled, check the time periods
-               $currentDay = strtolower(date('l'));
-               $currentTime = date('H:i');
-        
-               $stmt_periods = $this->conn->prepare("SELECT name, start_time FROM periods WHERE day_of_week = ? AND active = 1");
-               $stmt_periods->bind_param('s', $currentDay);
-               $stmt_periods->execute();
-               $result_periods = $stmt_periods->get_result();
+ private function getDevice($owner){
+    $respient = [];
 
-               while ($period = $result_periods->fetch_assoc()) {
+    $stmt = $this->conn->prepare("SELECT * FROM users WHERE email = ?");
+    $stmt->bind_param('s', $owner);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($user = $result->fetch_assoc()) {
+        $query = $this->conn->prepare("SELECT id, name FROM hardware WHERE id = ?");
+        $query->bind_param('i', $user['hardware_id']);
+        $query->execute();
+        $hardwareResult = $query->get_result();
+        while ($hardware = $hardwareResult->fetch_assoc()) {
+            $respient[] = $hardware;
+        }
+    } 
+    return $respient;
+}
+
+private function isCurrentTimeInPeriod() {
+    $role = 'Admin'; // Replace with a dynamic user ID
+    $stmt_timezone = $this->conn->prepare("SELECT timezone FROM users WHERE role = ?");
+    $stmt_timezone->bind_param('s', $role);
+    $stmt_timezone->execute();
+    $result_timezone = $stmt_timezone->get_result();
+    $userTimezone = $result_timezone->fetch_assoc()['timezone'] ?? 'Africa/Kigali';
+    $stmt_timezone->close();
+
+    date_default_timezone_set($userTimezone);
+    $currentDay = strtolower(date('l'));
+    $currentTime = date('H:i');
+
+    $periods = []; // collect all matched periods
+
+    try {
+        // 1. Check if any users are enabled
+        $stmt_users = $this->conn->prepare("SELECT COUNT(*) FROM users WHERE timetable_enabled = 1");
+        $stmt_users->execute();
+        $result_users = $stmt_users->get_result();
+        $count = $result_users->fetch_row()[0];
+
+        if ($count > 0) {
+            // 2. Fetch active periods for today
+            $stmt_periods = $this->conn->prepare("SELECT * FROM periods WHERE day_of_week = ? AND active = 1");
+            $stmt_periods->bind_param('s', $currentDay);
+            $stmt_periods->execute();
+            $result_periods = $stmt_periods->get_result();
+
+            while ($period = $result_periods->fetch_assoc()) {
                 $db_start_time = date('H:i', strtotime($period['start_time']));
-                  if ($currentTime == $db_start_time) {
-                    $response["success"] = true;
-                    $response["message"] = "It's time for period: " . $period['name'];
-                    break; // Exit the loop once a match is found
+                if ($currentTime == $db_start_time) {
+                    $falseVal = 0;
+                    $trueVal = 1;
+                    $respient = $this->getDevice($period['owner']);
+
+                    // If no devices found, add placeholder
+                    if (empty($respient)) {
+                        $respient[] = [
+                            "id" => null,
+                            "name" => "No device assigned to this timetable"
+                        ];
                     }
-                 }
-                 
-             }
-        } catch (Exception $e) {
-          // Handle database errors
-          $response['status'] = 'error';
-          $response['message'] = "Database error: " . $e->getMessage();
-        } 
-        return $response;
-    }       
+
+                    $this->conn->begin_transaction();
+try {
+    // Reset all periods for this owner
+    $stmt_false = $this->conn->prepare("UPDATE periods SET current = ? WHERE owner = ?");
+    $stmt_false->bind_param('is', $falseVal, $period['owner']); // assuming owner is stored as email (string)
+    $stmt_false->execute();
+    $stmt_false->close();
+
+    // Set this specific period to current = 1
+    $stmt_true = $this->conn->prepare("UPDATE periods SET current = ? WHERE id = ? AND owner = ?");
+    $stmt_true->bind_param('iis', $trueVal, $period['id'], $period['owner']);
+    $stmt_true->execute();
+    $stmt_true->close();
+
+    $this->conn->commit();
+
+    $periods[] = [
+        "period"  => $period['name'],
+        "id"      => $period['id'],
+        "message" => $period['name'],
+        "owner"   => $period['owner'],
+        "devices" => empty($respient) ? [
+            ["id" => null, "name" => "No device assigned to this timetable"]
+        ] : $respient
+    ];
+} catch (Exception $e) {
+    $this->conn->rollback();
+    $periods[] = [
+        "period"  => $period['name'],
+        "id"      => $period['id'],
+        "message" => "Failed to update current period: " . $e->getMessage(),
+        "owner"   => $period['owner'],
+        "devices" => $respient
+    ];
+}
+                }
+            }
+        }
+    } catch (Exception $e) {
+        return [
+            "success" => false,
+            "message" => "Database error: " . $e->getMessage()
+        ];
+    }
+
+    // Final unified response
+    if (!empty($periods)) {
+        return [
+            "success" => true,
+            "periods" => $periods
+        ];
+    } else {
+        return [
+            "success" => false,
+            "message" => "No active periods found for today."
+        ];
+    }
+}
+    /**
+     * Checks if the current time is within any active period for the user.
+     *
+     * @return array An array containing success status and period information.
+     */
+    public function checkCurrentTimeInPeriod() {
+        return $this->isCurrentTimeInPeriod();
+    }   
 }
 ?>

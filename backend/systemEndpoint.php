@@ -22,7 +22,7 @@ require_once 'manager.php'; // Make sure this path is correct
 // Database connection details
 $servername = "localhost";
 $username = "root";
-$password = "shimo@123flex"; // Your actual password
+$password = ""; // Your actual password
 $dbname = "atsfinal"; // Your actual database name
 
 $conn = null; // Initialize connection variable

@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Sep 22, 2025 at 10:02 AM
--- Server version: 8.0.32
+-- Generation Time: Nov 30, 2025 at 06:50 PM
+-- Server version: 8.0.31
 -- PHP Version: 8.0.26
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -24,6 +24,28 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `hardware`
+--
+
+DROP TABLE IF EXISTS `hardware`;
+CREATE TABLE IF NOT EXISTS `hardware` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(250) NOT NULL,
+  `passkey` varchar(250) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `hardware`
+--
+
+INSERT INTO `hardware` (`id`, `name`, `passkey`) VALUES
+(1, 'wemos_user', '$2y$10$Ln5DIe/bJpujtExF/0QTZegj3jPIZBG97sCpTd2ZvDeEVpQOLmw1W');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `periods`
 --
 
@@ -34,30 +56,43 @@ CREATE TABLE IF NOT EXISTS `periods` (
   `day_of_week` varchar(20) NOT NULL,
   `start_time` time NOT NULL,
   `end_time` time NOT NULL,
+  `current` tinyint(1) NOT NULL DEFAULT '0',
   `active` tinyint(1) DEFAULT '1',
+  `owner` varchar(255) NOT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`id`),
+  KEY `owner` (`owner`)
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `periods`
 --
 
-INSERT INTO `periods` (`id`, `name`, `day_of_week`, `start_time`, `end_time`, `active`, `created_at`, `updated_at`) VALUES
-(1, 'Wake up', 'Monday', '17:13:00', '19:13:00', 1, '2025-07-19 14:13:15', '2025-07-19 14:13:15'),
-(2, 'lunch', 'Monday', '12:15:00', '12:18:00', 0, '2025-07-19 14:15:45', '2025-07-19 14:35:52'),
-(4, 'jdfjje', 'Tuesday', '14:57:00', '21:53:00', 1, '2025-07-19 14:53:06', '2025-07-19 14:53:06'),
-(6, 'Lunch Break', 'Monday', '12:00:00', '13:00:00', 1, '2025-07-19 15:07:04', '2025-09-21 17:24:15'),
-(7, 'Afternoon Lab', 'Tuesday', '14:00:00', '16:00:00', 0, '2025-07-19 15:07:04', '2025-07-22 14:41:17'),
-(8, 'Team Standup', 'Wednesday', '10:00:00', '10:15:00', 1, '2025-07-19 15:07:04', '2025-09-19 19:56:13'),
-(9, 'Client Demo', 'Friday', '11:00:00', '12:00:00', 1, '2025-07-19 15:07:04', '2025-07-19 15:07:04'),
-(10, 'Weekend Fun', 'Saturday', '20:21:00', '23:00:00', 1, '2025-07-19 15:07:04', '2025-09-20 22:21:00'),
-(11, 'Happy Hour', 'Tuesday', '00:37:00', '13:56:00', 1, '2025-07-21 22:56:43', '2025-07-22 13:10:14'),
-(12, 'Happy Hour', 'Thursday', '07:45:00', '15:34:00', 1, '2025-07-22 15:22:08', '2025-07-22 15:22:08'),
-(13, 'Breakfast', 'Monday', '08:30:00', '09:00:00', 1, '2025-07-22 15:56:49', '2025-09-21 17:05:29'),
-(14, 'trail', 'Sunday', '21:53:00', '22:30:00', 1, '2025-09-20 21:12:14', '2025-09-21 21:52:46'),
-(15, 'trial2', 'Sunday', '21:54:00', '22:30:00', 1, '2025-09-20 21:14:54', '2025-09-21 21:52:55');
+INSERT INTO `periods` (`id`, `name`, `day_of_week`, `start_time`, `end_time`, `current`, `active`, `owner`, `created_at`, `updated_at`) VALUES
+(1, 'Wake up', 'Monday', '17:13:00', '19:13:00', 0, 1, 'shimo@gmail.com', '2025-07-19 14:13:15', '2025-11-27 20:58:11'),
+(2, 'lunch', 'Monday', '12:15:00', '12:18:00', 0, 0, 'shimo@gmail.com', '2025-07-19 14:15:45', '2025-11-27 20:58:11'),
+(4, 'jdfjje', 'Tuesday', '14:57:00', '21:53:00', 0, 1, 'shimo@gmail.com', '2025-07-19 14:53:06', '2025-11-27 20:58:11'),
+(6, 'Lunch Break', 'Monday', '12:00:00', '13:00:00', 0, 1, 'shimo@gmail.com', '2025-07-19 15:07:04', '2025-11-27 20:58:11'),
+(7, 'Afternoon Lab', 'Tuesday', '14:00:00', '16:00:00', 0, 0, 'shimo@gmail.com', '2025-07-19 15:07:04', '2025-11-27 20:58:11'),
+(8, 'Team Standup', 'Wednesday', '10:00:00', '10:15:00', 0, 1, 'shimo@gmail.com', '2025-07-19 15:07:04', '2025-11-27 20:58:11'),
+(9, 'Client Demo', 'Thursday', '20:34:00', '23:59:00', 0, 1, 'shimo@gmail.com', '2025-07-19 15:07:04', '2025-11-27 20:58:11'),
+(10, 'Weekend Fun', 'Saturday', '21:20:00', '23:00:00', 0, 1, 'shimo@gmail.com', '2025-07-19 15:07:04', '2025-11-29 21:23:04'),
+(11, 'Happy Hour', 'Tuesday', '00:37:00', '13:56:00', 0, 1, 'shimo@gmail.com', '2025-07-21 22:56:43', '2025-11-27 20:58:11'),
+(12, 'Happy Hour', 'Thursday', '20:32:00', '23:34:00', 0, 1, 'shimo@gmail.com', '2025-07-22 15:22:08', '2025-11-27 20:58:11'),
+(13, 'Breakfast', 'Monday', '08:30:00', '09:00:00', 0, 1, 'shimo@gmail.com', '2025-07-22 15:56:49', '2025-11-27 20:58:11'),
+(14, 'trail', 'Friday', '20:21:00', '22:30:00', 0, 1, 'shimo@gmail.com', '2025-09-20 21:12:14', '2025-11-27 20:58:11'),
+(15, 'trial2', 'Sunday', '18:00:00', '22:30:00', 0, 1, 'shimo@gmail.com', '2025-09-20 21:14:54', '2025-11-27 20:58:11'),
+(16, 'testing', 'Saturday', '21:25:00', '23:50:00', 0, 1, 'shimo@gmail.com', '2025-10-24 17:44:36', '2025-11-29 21:25:04'),
+(17, 'testing_2', 'Sunday', '11:40:00', '23:50:04', 1, 1, 'shimo@gmail.com', '2025-10-24 17:45:14', '2025-11-30 11:40:54'),
+(18, 'tester', 'Saturday', '20:24:00', '23:00:00', 0, 1, 'shimo@gmail.com', '2025-10-25 13:16:57', '2025-11-29 21:18:58'),
+(20, 'test3', 'Sunday', '10:55:00', '23:00:00', 0, 1, 'shimo@gmail.com', '2025-11-07 20:30:05', '2025-11-30 11:00:54'),
+(21, 'test4', 'Friday', '20:27:00', '23:59:00', 0, 1, 'shimo@gmail.com', '2025-11-07 20:32:05', '2025-11-27 20:58:11'),
+(22, 'test6', 'Sunday', '11:10:00', '23:59:00', 0, 1, 'shimo@gmail.com', '2025-11-07 20:32:09', '2025-11-30 11:13:54'),
+(23, 'tester', 'Sunday', '11:13:00', '23:00:00', 0, 1, 'shimo@gmail.com', '2025-11-08 11:10:56', '2025-11-30 11:40:54'),
+(24, 'tris', 'Saturday', '20:43:00', '23:00:00', 0, 1, 'shimo@gmail.com', '2025-11-15 19:43:46', '2025-11-27 20:58:11'),
+(26, 'SHIMO', 'Saturday', '21:25:00', '23:00:00', 1, 1, 'ctcindatwa@gmail.com', '2025-11-28 20:16:34', '2025-11-29 21:25:04'),
+(27, 'HU', 'Saturday', '21:23:00', '23:00:00', 0, 1, 'ctcindatwa@gmail.com', '2025-11-29 20:54:27', '2025-11-29 21:25:04');
 
 -- --------------------------------------------------------
 
@@ -72,20 +107,38 @@ CREATE TABLE IF NOT EXISTS `users` (
   `role` varchar(250) NOT NULL DEFAULT 'Guest',
   `passkey` varchar(450) NOT NULL,
   `status` tinyint NOT NULL DEFAULT '1',
+  `hardware_id` int NOT NULL,
   `timetable_enabled` tinyint(1) NOT NULL DEFAULT '1',
   `hard_switch_enabled` tinyint(1) NOT NULL DEFAULT '0',
   `timezone` varchar(100) DEFAULT 'Africa/Kigali',
   PRIMARY KEY (`id_users`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `hardware_id` (`hardware_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id_users`, `email`, `role`, `passkey`, `status`, `timetable_enabled`, `hard_switch_enabled`, `timezone`) VALUES
-(2, 'shimo@gmail.com', 'Admin', '$2y$10$222l/8armb/HRyIK7ehLsO2K.xJ9r6sbhJhqzIBoGYgG5OjG/hyW6', 1, 0, 1, 'Africa/Kigali'),
-(27, 'adelin@gmail.com', 'Guest', '$2y$10$vkN5tp85nAl9oK./H.2wrOp8.O7xEvOFJo/V19.RgeA.cp/XChJ2O', 1, 1, 1, 'Africa/Kigali');
+INSERT INTO `users` (`id_users`, `email`, `role`, `passkey`, `status`, `hardware_id`, `timetable_enabled`, `hard_switch_enabled`, `timezone`) VALUES
+(2, 'shimo@gmail.com', 'Admin', '$2y$10$222l/8armb/HRyIK7ehLsO2K.xJ9r6sbhJhqzIBoGYgG5OjG/hyW6', 1, 1, 1, 1, 'Africa/Kigali'),
+(28, 'ctcindatwa@gmail.com', 'Admin', '$2y$10$dKjCmUCBk8NwXVBhYCeYGOzedvBkmsXM.B5qJMIFYrtpViaCgJHfq', 1, 0, 1, 0, 'America/Sao_Paulo');
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `hardware`
+--
+ALTER TABLE `hardware`
+  ADD CONSTRAINT `hardware_user` FOREIGN KEY (`id`) REFERENCES `users` (`hardware_id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+--
+-- Constraints for table `periods`
+--
+ALTER TABLE `periods`
+  ADD CONSTRAINT `periods_ibfk_1` FOREIGN KEY (`owner`) REFERENCES `users` (`email`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
