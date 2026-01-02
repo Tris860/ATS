@@ -37,6 +37,24 @@
         transform: translateY(-200%);
         background:linear-gradient(-150deg,var(--primary_color2 ),var(--primary_color2 ),var(--accent_color));
       }
+      .logo-container{
+        width:100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+
+      }
+      .logo-container .logo{
+        display: block;
+        width: 15%;
+      }
+      .logo-container h1{
+        font-size: 3em;
+        color:var(--accent_color);
+        margin-left: 10px;
+        text-shadow: 0 0 10px var(--secondary_color2);
+      }
       
       .form{
         margin:1%;

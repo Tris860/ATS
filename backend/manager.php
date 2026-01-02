@@ -3,6 +3,8 @@
 class User {
     private $conn;
 
+    
+
     /**
      * Constructor for the User class.
      *
@@ -54,7 +56,15 @@ class User {
             return ["success" => false, "message" => "Registration failed. Please try again."];
         }
     }
-
+    private function check_Subscription(int $id) : bool{
+        $stmt = $this->conn->prepare("SELECT * FROM `subscriptions` WHERE id= ?" );
+        $stmt->bind_param("s", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        if ($user['status'] == 0){ return False; }
+        return True;
+    }
     /**
      * Logs in a user.
      *
@@ -67,14 +77,31 @@ class User {
             return ["success" => false, "message" => "Email and password cannot be empty."];
         }
 
-        $stmt = $this->conn->prepare("SELECT id_users, email, passkey, timetable_enabled, hard_switch_enabled FROM users WHERE email = ?");
+        $stmt = $this->conn->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
+        
 
         if ($result->num_rows === 1) {
             $user = $result->fetch_assoc();
+            if($user["role"] == "Super Admin"){
+                $_SESSION['logged_in'] = true;
+                $_SESSION['user_id'] = $user['id_users'];
+                $_SESSION['email'] = $user['email'];
+                $_SESSION['timetable_enabled'] = (bool)$user['timetable_enabled'];
+                $_SESSION['hard_switch_enabled'] = (bool)$user['hard_switch_enabled'];
+
+                $stmt->close();
+                return ["success" => true, "message" => "Login successful!" ,"role" =>"Super Admin"]; 
+            }
+            
             if (password_verify($passkey, $user['passkey'])) {
+                if (!$this->check_Subscription($user["id_users"])){
+                return ["success" => false, "message" => "Your access to ATS features has been paused. 
+                                                      To continue using our services without interruption,
+                                                      please contact (+250 784 912 881) to renew your subscription."];
+            }
                 // Set session variables
                 $_SESSION['logged_in'] = true;
                 $_SESSION['user_id'] = $user['id_users'];
@@ -83,7 +110,7 @@ class User {
                 $_SESSION['hard_switch_enabled'] = (bool)$user['hard_switch_enabled'];
 
                 $stmt->close();
-                return ["success" => true, "message" => "Login successful!"];
+                return ["success" => true, "message" => "Login successful!" ,"role" =>"Admin"];
             } else {
                 $stmt->close();
                 return ["success" => false, "message" => "Invalid email or password."];
@@ -990,6 +1017,220 @@ try {
      */
     public function checkCurrentTimeInPeriod() {
         return $this->isCurrentTimeInPeriod();
-    }   
+    }  
+    private function checkerSuperUser(int $id){
+        $stmt = $this->conn->prepare("SELECT * FROM `users` WHERE id_users= ?" );
+        $stmt->bind_param("s", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        if ($user['role'] == "Super Admin"){ return True ;}
+        return False;
+    }
+    public function getAllUsers(int $id): array {
+    // Check access
+    if (!$this->checkerSuperUser($id)) {
+        return ["success" => false, "message" => "No Access to this data"." ".$id];
+    }
+
+    $results = [];
+
+    // SQL query joining users and subscriptions
+    $sql = "
+        SELECT 
+            users.email, 
+            subscriptions.id AS subscription_id, 
+            subscriptions.date_of_expiry, 
+            subscriptions.status
+        FROM users
+        INNER JOIN subscriptions ON users.id_users = subscriptions.id
+        WHERE users.id_users != ?
+        ORDER BY subscriptions.date_of_expiry DESC
+    ";
+
+    // Prepare statement
+    $stmt = $this->conn->prepare($sql);
+    if (!$stmt) {
+        return ["success" => false, "message" => "Query preparation failed: " . $this->conn->error];
+    }
+
+    // Bind parameters (compatible with older PHP versions)
+    $params = [$id];
+    $types = "i";
+
+    $bindParams = [];
+    $bindParams[] = $types;
+    foreach ($params as $key => $value) {
+        $bindParams[] = &$params[$key]; // must be passed by reference
+    }
+    call_user_func_array([$stmt, 'bind_param'], $bindParams);
+
+    // Execute query
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return ["success" => false, "message" => "Query execution failed: " . $stmt->error];
+    }
+
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $results[] = [
+            "email" => $row["email"],
+            "subscription_id" => $row["subscription_id"],
+            "date_of_expiry" => $row["date_of_expiry"],
+            "status" => $row["status"]
+        ];
+    }
+
+    $stmt->close();
+
+    return ["success" => true, "data" => $results];
+}
+public function updateSubscription(int $userId, string $planType): array {
+    // Determine expiry interval based on plan type
+    $interval = null;
+    if (strtolower($planType) === "free trial") {
+        $interval = "INTERVAL 45 DAY"; // 1.5 months ≈ 45 days
+    } elseif (strtolower($planType) === "standard") {
+        $interval = "INTERVAL 3 MONTH";
+    } else {
+        return ["success" => false, "message" => "Invalid plan type"];
+    }
+
+    // SQL to update expiry date and status
+    $sql = "
+        UPDATE subscriptions 
+        SET date_of_expiry = DATE_ADD(NOW(), $interval), 
+            status = 1
+        WHERE id = ?
+    ";
+
+    $stmt = $this->conn->prepare($sql);
+    if (!$stmt) {
+        return ["success" => false, "message" => "Query preparation failed: " . $this->conn->error];
+    }
+
+    // Bind userId
+    $stmt->bind_param("i", $userId);
+
+    // Execute
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return ["success" => false, "message" => "Update failed: " . $stmt->error];
+    }
+
+    $affected = $stmt->affected_rows;
+    $stmt->close();
+
+    if ($affected > 0) {
+        return ["success" => true, "message" => "Subscription updated successfully"];
+    } else {
+        return ["success" => false, "message" => "No subscription found for this user"];
+    }
+}
+public function updateUserPassword(int $userId, string $newPassword): array {
+    // Hash the new password securely
+    $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);;
+
+    if ($hashedPassword === false) {
+        return ["success" => false, "message" => "Password hashing failed"];
+    }
+
+    // SQL to update the user's password
+    $sql = "UPDATE users SET passkey = ? WHERE id_users = ?";
+
+    $stmt = $this->conn->prepare($sql);
+    if (!$stmt) {
+        return ["success" => false, "message" => "Query preparation failed: " . $this->conn->error];
+    }
+
+    // Bind parameters
+    $stmt->bind_param("si", $hashedPassword, $userId);
+
+    // Execute
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return ["success" => false, "message" => "Password update failed: " . $stmt->error];
+    }
+
+    $affected = $stmt->affected_rows;
+    $stmt->close();
+
+    if ($affected > 0) {
+        return ["success" => true, "message" => "Password updated successfully"];
+    } else {
+        return ["success" => false, "message" => "No user found with this ID"];
+    }
+}
+public function getUsersWithSubscriptionByStatus(int $userStatus, ?int $excludeUserId = null, ?int $subscriptionStatus = null): array {
+    $results = [];
+
+    // Base SQL with JOIN to subscriptions
+    $sql = "
+        SELECT
+            users.email,
+            subscriptions.id AS subscription_id,
+            subscriptions.date_of_expiry,
+            subscriptions.status AS subscription_status
+        FROM users
+        INNER JOIN subscriptions ON users.id_users = subscriptions.id
+        WHERE users.status = ?
+    ";
+
+    // Params/Types for older PHP compatibility (no splat)
+    $params = [$userStatus];
+    $types  = "i";
+
+    // Optional: exclude a specific user
+    if ($excludeUserId !== null) {
+        $sql .= " AND users.id_users != ?";
+        $params[] = $excludeUserId;
+        $types   .= "i";
+    }
+
+    // Optional: filter by subscription status (e.g., 1 for active)
+    if ($subscriptionStatus !== null) {
+        $sql .= " AND subscriptions.status = ?";
+        $params[] = $subscriptionStatus;
+        $types   .= "i";
+    }
+
+    // Order by nearest expiry first
+    $sql .= " ORDER BY subscriptions.date_of_expiry ASC";
+
+    // Prepare
+    $stmt = $this->conn->prepare($sql);
+    if (!$stmt) {
+        return ["success" => false, "message" => "Query preparation failed: " . $this->conn->error];
+    }
+
+    // Bind (compatible with older PHP versions)
+    $bindParams = [$types];
+    foreach ($params as $k => $v) {
+        $bindParams[] = &$params[$k]; // pass by reference
+    }
+    call_user_func_array([$stmt, 'bind_param'], $bindParams);
+
+    // Execute
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return ["success" => false, "message" => "Query execution failed: " . $stmt->error];
+    }
+
+    // Fetch
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $results[] = [
+            "email" => $row["email"],
+            "id" => $row["subscription_id"],
+            "date_of_expiry" => $row["date_of_expiry"],
+            "status" => $row["subscription_status"]
+        ];
+    }
+
+    $stmt->close();
+
+    return ["success" => true, "data" => $results];
+}
+
 }
 ?>

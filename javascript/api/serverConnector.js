@@ -71,40 +71,52 @@ signupForm?.addEventListener('submit', function(event) {
 
 async function handleSubmit(action, form, url, errorElement, successMessage, redirectUrl = null, successCallback = null) {
     try {
-        const formData = new FormData(form);
-        formData.append('action', action); // Changed 'mode' to 'action' to match backend expectation
+      const formData = new FormData(form);
+      formData.append("action", action); // Changed 'mode' to 'action' to match backend expectation
 
-        const response = await fetch(url, {
-            method: 'POST',
-            body: formData // This sends as multipart/form-data, which PHP's $_POST handles
-        });
+      const response = await fetch(url, {
+        method: "POST",
+        body: formData, // This sends as multipart/form-data, which PHP's $_POST handles
+      });
 
-        if (!response.ok) {
-            const errorMessage = await response.text();
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorMessage}`);
-        }
-        const data = await response.json(); // Parse JSON response
-        console.log('Server response:', data);
+      if (!response.ok) {
+        const errorMessage = await response.text();
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorMessage}`
+        );
+      }
+      // const data = await response.json(); // Parse JSON response
+      // console.log('Server response:', data);
+        const rawText = await response.text(); // Get raw response as plain text console.log("Raw server response:", rawText);
+        console.log(rawText)
+    const data = JSON.parse(rawText);
 
-        if (data.success) {
-            displaySuccess(errorElement, data.message);
-            if (successCallback && typeof successCallback === 'function') {
-                const callbackResult = successCallback(data);
-                // Only redirect if callbackResult is not explicitly false
-                if (redirectUrl && callbackResult !== false) {
-                    window.location.href = redirectUrl;
-                }
-            } else if (redirectUrl) {
-                // If no specific callback, just redirect
-                window.location.href = redirectUrl;
+      if (data.success) {
+        displaySuccess(errorElement, data.message);
+        if (successCallback && typeof successCallback === "function") {
+          const callbackResult = successCallback(data);
+          // Only redirect if callbackResult is not explicitly false
+          if (redirectUrl && callbackResult !== false) {
+            if (data.role == "Admin") {
+              window.location.href = redirectUrl;
+            } else {
+              window.location.href = "Admin/index.html";
             }
-        } else {
-            displayError(errorElement, data.message); // Display server's error message
-            if (successCallback && typeof successCallback === 'function') {
-                successCallback(data); // Optional custom error handling
-            }
+          }
+        } else if (redirectUrl) {
+          // If no specific callback, just redirect
+          if (data.role == "Admin") {
+            window.location.href = redirectUrl;
+          } else {
+            window.location.href = "Admin/index.html";
+          }
         }
-
+      } else {
+        displayError(errorElement, data.message); // Display server's error message
+        if (successCallback && typeof successCallback === "function") {
+          successCallback(data); // Optional custom error handling
+        }
+      }
     } catch (error) {
         console.error('Submission failed:', error);
         displayError(errorElement, `Network or server error: ${error.message}. Please try again.`);

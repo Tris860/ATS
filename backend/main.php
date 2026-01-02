@@ -406,6 +406,98 @@ try {
                $response = ["success" => false, "message" => "Invalid request method for get_user_device. Use POST."];
             }
         break;
+
+
+    case 'get_all_users':
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            if (!$isLoggedIn || !$loggedInUserId) {
+                $response = ["success" => false, "message" => "Not logged in to fetch users."];
+                http_response_code(401);
+                break;
+            }
+            
+            $response = $timeChecker->getAllUsers($loggedInUserId);
+        } else {
+            http_response_code(405);
+            $response = ["success" => false, "message" => "Invalid request method for get_all_users. Use GET."];
+        }
+        break;
+  
+case 'update_subscription':
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!$isLoggedIn || !$loggedInUserId) {
+            $response = ["success" => false, "message" => "Not logged in to update subscription."];
+            http_response_code(401);
+            break;
+        }
+
+        $planType = $_POST['plan_type'] ?? null;
+        $targetUserId = isset($_POST['user_id']) ? intval($_POST['user_id']) : null; // ✅ cast to int
+
+        if (!$planType || !$targetUserId) {
+            $response = ["success" => false, "message" => "Missing parameters (plan_type or user_id)."];
+            http_response_code(400);
+            break;
+        }
+
+        // ✅ update subscription for the client, not the admin
+        $response = $timeChecker->updateSubscription($targetUserId, $planType);
+
+    } else {
+        http_response_code(405);
+        $response = ["success" => false, "message" => "Invalid request method for update_subscription. Use POST."];
+    }
+    break;
+
+case 'update_password':
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!$isLoggedIn || !$loggedInUserId) {
+            $response = ["success" => false, "message" => "Not logged in to update password."];
+            http_response_code(401);
+            break;
+        }
+
+        $newPassword = $_POST['new_password'] ?? null;
+        $targetUserId = isset($_POST['user_id']) ? intval($_POST['user_id']) : null; // ✅ cast to int
+
+        if (!$newPassword || !$targetUserId) {
+            $response = ["success" => false, "message" => "Missing parameters (new_password or user_id)."];
+            http_response_code(400);
+            break;
+        }
+
+        // ✅ update password for the client, not the admin
+        $response = $timeChecker->updateUserPassword($targetUserId, $newPassword);
+
+    } else {
+        http_response_code(405);
+        $response = ["success" => false, "message" => "Invalid request method for update_password. Use POST."];
+    }
+    break;
+
+
+
+    case 'get_users_by_status':
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            if (!$isLoggedIn || !$loggedInUserId) {
+                $response = ["success" => false, "message" => "Not logged in to fetch users by status."];
+                http_response_code(401);
+                break;
+            }
+            $status = $_GET['status'] ?? null;
+            if ($status === null) {
+                $response = ["success" => false, "message" => "Missing status parameter."];
+                http_response_code(400);
+                break;
+            }
+            $response = $timeChecker->getUsersWithSubscriptionByStatus((int)$status);
+        } else {
+            http_response_code(405);
+            $response = ["success" => false, "message" => "Invalid request method for get_users_by_status. Use GET."];
+        }
+        break;
+
+
         default:
             http_response_code(400); // Bad Request
             $response = ["success" => false, "message" => "Unknown action: " . ($action === '' ? '[empty]' : $action)];
