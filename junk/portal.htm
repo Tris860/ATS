@@ -16,10 +16,16 @@
       Connected to Unified Server at <code>combined-server-1fyr.onrender.com</code>
     </p>
 
-    <!-- Connection Status Indicator -->
+    <!-- Browser WS Status -->
     <div id="status" class="flex items-center justify-center p-3 rounded-lg shadow-inner bg-gray-100">
       <div id="status-dot" class="w-3 h-3 rounded-full mr-2 bg-gray-400"></div>
       <span id="status-text" class="text-sm font-medium text-gray-600">Connecting...</span>
+    </div>
+
+    <!-- Device Status Indicator -->
+    <div id="device-status" class="flex items-center justify-center p-3 rounded-lg shadow-inner bg-gray-100">
+      <div id="device-dot" class="w-3 h-3 rounded-full mr-2 bg-red-500"></div>
+      <span id="device-text" class="text-sm font-medium text-gray-600">Device Offline</span>
     </div>
 
     <!-- Command Buttons -->
@@ -39,12 +45,11 @@
   </div>
 
 <script>
-  const WS_DEVICE_URL = "wss://combined-server-1fyr.onrender.com/ws/device?deviceId=1";
-  const WS_BROWSER_URL = "wss://combined-server-1fyr.onrender.com/ws/browser?email=shimo@gmail.com"; // owner email for notifications
+  const WS_BROWSER_URL = "wss://combined-server-1fyr.onrender.com/ws/browser?email=shimo@gmail.com";
   const CMD_URL = "https://combined-server-1fyr.onrender.com/command";
   const DEVICE_NAME = "wemos_user";
 
-  let deviceSocket, browserSocket;
+  let browserSocket;
   const logElement = document.getElementById('log');
   const statusDot = document.getElementById('status-dot');
   const statusText = document.getElementById('status-text');
@@ -59,54 +64,60 @@
     logElement.scrollTop = logElement.scrollHeight;
   }
 
-  function connectDeviceWS() {
-    updateLog(`Connecting to ${WS_DEVICE_URL}...`, 'system');
-    deviceSocket = new WebSocket(WS_DEVICE_URL);
+  // Device status indicator
+  function setDeviceOnline() {
+    document.getElementById('device-dot').classList.replace('bg-red-500','bg-green-500');
+    document.getElementById('device-text').textContent = "Device Online";
+  }
 
-    deviceSocket.onopen = () => {
-      statusDot.classList.replace('bg-gray-400','bg-green-500');
-      statusText.textContent = 'Connected';
-      updateLog('Device WebSocket established.', 'info');
-      deviceSocket.send(JSON.stringify({ type:"auth", username:"wemos_user", password:"wemos_pass" }));
-    };
-
-    deviceSocket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "pong") updateLog("Received PONG", 'system');
-        else if (data.type === "auth_failed") updateLog("Auth failed: " + data.reason, 'error');
-        else if (data.type === "command") updateLog(`Command received: ${data.payload.action}`, 'warn');
-        else if (data.type === "status") updateLog(`Device status: ${JSON.stringify(data)}`, 'info');
-        else updateLog("Server: " + event.data, 'system');
-      } catch { updateLog("Raw: " + event.data, 'system'); }
-    };
-
-    deviceSocket.onclose = () => {
-      statusDot.classList.replace('bg-green-500','bg-red-500');
-      statusText.textContent = 'Disconnected';
-      updateLog("Device WebSocket closed. Retrying in 5s...", 'error');
-      setTimeout(connectDeviceWS, 5000);
-    };
+  function setDeviceOffline() {
+    document.getElementById('device-dot').classList.replace('bg-green-500','bg-red-500');
+    document.getElementById('device-text').textContent = "Device Offline";
   }
 
   function connectBrowserWS() {
     updateLog(`Connecting to ${WS_BROWSER_URL}...`, 'system');
     browserSocket = new WebSocket(WS_BROWSER_URL);
 
-    browserSocket.onopen = () => updateLog('Browser WebSocket established.', 'info');
+    browserSocket.onopen = () => {
+      statusDot.classList.replace('bg-gray-400','bg-green-500');
+      statusText.textContent = 'Connected';
+      updateLog('Browser WebSocket established.', 'info');
+    };
+
     browserSocket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log(" // " + data)
         if (data.type === "auto_on_trigger") {
           updateLog(`🔔 AUTO_ON triggered for ${data.deviceName}: ${data.message}`, 'warn');
-        } else if (data.type === "device_status") {
+        }
+
+        else if (data.type === "device_status") {
+          if (["CONNECTED","READY","AVAILABLE"].includes(data.status.toUpperCase())) {
+            setDeviceOnline();
+          } else {
+            setDeviceOffline();
+          }
           updateLog(`Device ${data.deviceName} status: ${data.status}`, 'info');
-        } else {
+        }
+
+        else {
           updateLog("Browser WS: " + event.data, 'system');
         }
-      } catch { updateLog("Browser raw: " + event.data, 'system'); }
+
+      } catch {
+        updateLog("Browser raw: " + event.data, 'system');
+      }
     };
-    browserSocket.onclose = () => updateLog("Browser WebSocket closed.", 'error');
+
+    browserSocket.onclose = () => {
+      statusDot.classList.replace('bg-green-500','bg-red-500');
+      statusText.textContent = 'Disconnected';
+      setDeviceOffline();
+      updateLog("Browser WebSocket closed. Retrying in 5s...", 'error');
+      setTimeout(connectBrowserWS, 5000);
+    };
   }
 
   async function sendCommand(command) {
@@ -126,7 +137,6 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    connectDeviceWS();
     connectBrowserWS();
   });
 </script>

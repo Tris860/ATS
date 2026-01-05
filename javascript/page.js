@@ -1,7 +1,13 @@
 // Define your PHP backend endpoint URL
 // IMPORTANT: Replace this with the actual URL to your PHP script!
 let previouslySelectedRowId = null;
-const PHP_API_URL = "https://tristechhub.org.rw/projects/ATS/backend/main.php";
+const PHP_API_URL = "http://localhost:3000/backend/main.php";
+
+let socket = null;
+let DEVICE_NAME = null;
+let deviceReady = false;
+
+const CMD_URL = "https://combined-server-1fyr.onrender.com/command";
 let USER_EMAIL = "";
 let WS_BROWSER_URL = ""; // Will be set after fetching user email/session
 const timetableBody = document.getElementById("timetableBody");
@@ -131,13 +137,15 @@ const fetchUserEmailAndSettings = async () => {
     }
 
     const data = await response.json();
-
+    console.log(data.device);
     if (data.success) {
+      DEVICE_NAME = data.device;
       USER_EMAIL = data.email || "";
       userEmailDisplay.textContent = data.email || "N/A"; // Display email or 'N/A' if empty
       WS_BROWSER_URL = `wss://combined-server-1fyr.onrender.com/ws/browser?email=${encodeURIComponent(
         USER_EMAIL
-      )}`;
+      )}&deviceName=${encodeURIComponent(DEVICE_NAME)}`;
+  
       // Update global timetable enabled state and toggle button
       isTimetableEnabled = data.timetable_enabled;
       toggleTimetableVisibility.checked = isTimetableEnabled;
@@ -924,6 +932,22 @@ ringBellBtn.onclick = async () => {
   SendSignal(command);
 };
 
+async function highlightRow(newPeriodId, highlightClass = "current-row") {
+  const newRowId = `period-${newPeriodId}`;
+  const previousRow =
+    previouslySelectedRowId && previouslySelectedRowId !== newRowId
+      ? document.getElementById(previouslySelectedRowId)
+      : null;
+  if (previousRow) previousRow.classList.remove(highlightClass);
+
+  const newRow = document.getElementById(newRowId);
+  if (newRow) {
+    newRow.classList.add(highlightClass);
+    previouslySelectedRowId = newRowId;
+    await fetchPeriods();
+  }
+}
+
 // Event listener for the hard switch toggle (specific handler)
 toggleHardSwitch.onchange = async (e) => {
   const enabled = e.target.checked;
@@ -993,123 +1017,171 @@ timezoneSelect.onchange = async (e) => {
 // WebSocket client (no message IDs, no tracking)
 // Replace your existing client script with this. Ensure showCustomModal() exists.
 
-// --- Socket + timers ---
-let socket = null;
-let reconnectTimer = null;
-let reconnectDelayMs = 2000;
+// ================================
+// CONFIG
+// ================================
+
 
 // --- Indicator helpers ---
+// --- Indicators ---
 function setServerIndicatorDisconnected() {
-  const el = document.getElementById('ServerIndicator');
-  if (el) el.style.color = '#ff0000'; // red
+  const el = document.getElementById("ServerIndicator");
+  if (el) el.style.color = "#ff0000"; // RED
 }
 function setServerIndicatorServerOnly() {
-  const el = document.getElementById('ServerIndicator');
-  if (el) el.style.color = '#0000ff'; // blue
+  const el = document.getElementById("ServerIndicator");
+  if (el) el.style.color = "#0000ff"; // BLUE
 }
 function setServerIndicatorDeviceReady() {
-  const el = document.getElementById('ServerIndicator');
-  if (el) el.style.color = '#00ff00'; // green
+  const el = document.getElementById("ServerIndicator");
+  if (el) el.style.color = "#00ff00"; // GREEN
 }
 
 // --- UI helpers ---
 function notifyUser(title, msg) {
-  if (typeof showCustomModal === 'function') {
+  if (typeof showCustomModal === "function") {
     showCustomModal(title, msg);
   } else {
-    alert(title + '\n' + msg);
+    alert(title + "\n" + msg);
   }
+}
+function enableCommandButtons(enabled) {
+  const buttons = document.querySelectorAll(".command-button");
+  buttons.forEach((btn) => (btn.disabled = !enabled));
 }
 
 // --- WebSocket connection ---
-function connectWebSocket() {
+function connectWebSocket(email, deviceName) {
   if (socket && socket.readyState === WebSocket.OPEN) return;
-  if (reconnectTimer) {
-    clearTimeout(reconnectTimer);
-    reconnectTimer = null;
-  }
 
-  socket = new WebSocket(WS_BROWSER_URL); // connect to /ws/browser?email=...
+  // Pass both email and deviceName in query string
+ // const wsUrl = `${WS_BROWSER_URL}?email=${encodeURIComponent(email)}&deviceName=${encodeURIComponent(deviceName)}`;
+  socket = new WebSocket(WS_BROWSER_URL);
 
   socket.onopen = () => {
-    reconnectDelayMs = 2000;
-    setServerIndicatorServerOnly();
-    console.log("Browser WebSocket connected.");
+    setServerIndicatorServerOnly(); // BLUE
+    enableCommandButtons(false);
+    console.log("[WS] Browser WebSocket connected.");
   };
 
   socket.onmessage = (event) => {
+    console.log("[WS] Raw message from backend:", event.data);
+
     let data;
     try {
       data = JSON.parse(event.data);
     } catch {
-      console.log('WS message (non-JSON):', event.data);
+      console.log("[WS] Non-JSON message:", event.data);
       return;
     }
+
+    console.log("[WS] Parsed data object:", data);
 
     const type = data.type;
 
-    if (type === 'device_status') {
-      const deviceName = data.deviceName || 'Device';
-      const statusRaw = data.status || 'UNKNOWN';
-      const ready = ['CONNECTED','READY','AVAILABLE'].includes(statusRaw.toUpperCase());
-      if (ready) setServerIndicatorDeviceReady();
-      else setServerIndicatorServerOnly();
-      notifyUser('Device status', `${deviceName} is ${statusRaw}`);
+    if (type === "device_status") {
+      const statusRaw = data.status || "UNKNOWN";
+      const ready = ["CONNECTED", "READY", "AVAILABLE"].includes(statusRaw.toUpperCase());
+
+      console.log(`[WS] Device status update: ${data.deviceName} -> ${statusRaw}, ready=${ready}`);
+
+      if (data.deviceName && ready) {
+        DEVICE_NAME = data.deviceName; // assign the device name
+        deviceReady = true;
+        setServerIndicatorDeviceReady(); // GREEN
+        enableCommandButtons(true);
+      } else {
+        deviceReady = false;
+        setServerIndicatorServerOnly(); // BLUE
+        enableCommandButtons(false);
+      }
+
+      notifyUser("Device status", `${data.deviceName || "Device"} is ${statusRaw}`);
       return;
     }
 
-    if (type === 'auto_on_trigger') {
-      const deviceName = data.deviceName || 'Device';
-      const msg = data.message || 'Scheduled AUTO_ON';
-      notifyUser('Schedule triggered', `${msg}\n${deviceName} was toggled.`);
-      console.log('Auto ON Trigger:', msg);
+    if (type === "auto_on_trigger") {
+      const deviceName = data.deviceName || "Device";
+      const msg = data.message || "Scheduled AUTO_ON";
+      console.log(`[WS] Auto ON trigger received: ${deviceName} -> ${msg}`);
+      notifyUser("Schedule triggered", `${msg}\n${deviceName} was toggled.`);
       return;
     }
 
-    console.log('WS message (unhandled type):', data);
+    console.log("[WS] Unhandled message type:", data);
   };
 
   socket.onclose = () => {
-    setServerIndicatorDisconnected();
-    reconnectTimer = setTimeout(() => connectWebSocket(), reconnectDelayMs);
-    reconnectDelayMs = Math.min(30000, reconnectDelayMs * 1.5);
+    setServerIndicatorDisconnected(); // RED
+    enableCommandButtons(false);
+    console.log("[WS] Browser WebSocket closed. Retrying in 5s...");
+    setTimeout(() => connectWebSocket(email, deviceName), 5000);
   };
 
   socket.onerror = (err) => {
-    console.error('WebSocket error', err);
-    setServerIndicatorDisconnected();
+    console.error("[WS] WebSocket error:", err);
+    setServerIndicatorDisconnected(); // RED
+    enableCommandButtons(false);
   };
 }
 
 // --- Sending helpers (via REST /command) ---
 async function SendSignal(command) {
+  if (!DEVICE_NAME || !deviceReady) {
+    console.warn("[CMD] Blocked command, device not ready:", command);
+    notifyUser("Command failed", "❌ No device connected yet.");
+    return;
+  }
+
+  console.log("[CMD] Sending command to backend:", {
+    command,
+    deviceName: DEVICE_NAME,
+  });
+
   try {
     const response = await fetch(CMD_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ command: command, deviceName: DEVICE_NAME })
+      body: JSON.stringify({ command: command, deviceName: DEVICE_NAME }),
     });
+
     const data = await response.json();
+    console.log("[CMD] Backend response:", data);
+
     if (data.status === "ok") {
-      notifyUser('Command sent', `✅ ${data.message}`);
+      notifyUser("Command sent", `✅ ${data.message}`);
     } else {
-      notifyUser('Command failed', `❌ ${data.message}`);
+      notifyUser("Command failed", `❌ ${data.message}`);
     }
   } catch (err) {
-    console.error('SendSignal failed:', err);
+    console.error("[CMD] SendSignal failed:", err);
     notifyUser("Action failed", "Unable to send your command. Please try again.");
   }
 }
 
+// --- Simple wrapper for buttons ---
+function sendCmd(cmd) {
+  console.log("[UI] Button pressed, sending:", cmd);
+  SendSignal(cmd);
+}
 
+
+// --- Initial setup ---
+
+
+
+
+
+// --- Initial setup ---
+// window.addEventListener("DOMContentLoaded", () => {
+//   connectWebSocket();
+// });
 
 // --- Initial setup ---
 window.onload = async () => {
   await fetchTimezone();
-    await fetchUserEmailAndSettings();
-      
-    renderDaySelectionButtons();
-    connectWebSocket();
+  await fetchUserEmailAndSettings();
+  renderDaySelectionButtons();
   showSection("timetableSection");
 };
 

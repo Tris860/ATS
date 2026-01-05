@@ -459,13 +459,14 @@ class TimetableManager {
      * @param array $arr The array of parameters.
      * @return array The array with values passed by reference.
      */
-    private function refValues(array $arr) {
-        $refs = [];
-        foreach ($arr as $key => $value) {
-            $refs[$key] = &$arr[$key]; // Create a reference to each value
+    private function refValues(array &$arr): array {
+       $refs = [];
+       foreach ($arr as $key => &$value) {
+            $refs[$key] = &$value;
         }
         return $refs;
     }
+
 
     /**
      * Fetches all periods, optionally filtered by day.
@@ -474,7 +475,8 @@ class TimetableManager {
      * @return array An array of period data.
      * @throws mysqli_sql_exception If a database error occurs during statement preparation or execution.
      */
-    public function getAllPeriods(?string $dayOfWeek = null, string $owner): array {
+    public function getAllPeriods(string $owner, ?string $dayOfWeek = null)
+        {
         $periods = [];
         $sql = "SELECT * FROM periods WHERE owner = ?";
         $params = [$owner];

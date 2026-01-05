@@ -160,7 +160,8 @@ try {
                 $timetableEnabled = true; 
                 $hardSwitchEnabled = true; 
             }
-            $response = ["success" => true, "email" => $userEmail, "timetable_enabled" => $timetableEnabled, "hard_switch_enabled" => $hardSwitchEnabled];
+            $data = $userManager->getAssignedDevice($userEmail);
+            $response = ["success" => true, "email" => $userEmail, "timetable_enabled" => $timetableEnabled, "hard_switch_enabled" => $hardSwitchEnabled,"device" => $data];
             break;
 
         case 'change_password':
@@ -265,7 +266,7 @@ try {
             // This is a GET request, so get 'day' from $_GET
             $dayFilter = $_GET['day'] ?? null;
             // In a real app, you'd pass $loggedInUserId here to filter periods by user ownership
-            $periods = $timetableManager->getAllPeriods($dayFilter, $loggedInUserEmail ?? '');
+            $periods = $timetableManager->getAllPeriods(owner: $loggedInUserEmail ?? '' ,dayOfWeek:($dayFilter));
             $response = ["success" => true, "periods" => $periods];
             break;
 
