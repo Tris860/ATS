@@ -1,100 +1,697 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ATS Admin Dashboard</title>
-  <link rel="stylesheet" href="admin.css" />
-  <link rel="shortcut icon" href="../media/logo.png" type="image/x-icon">
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  />
-</head>
-<body>
-  <div id="toast-container" class="toast-container"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ATS Admin Dashboard</title>
+    <link rel="stylesheet" href="admin.css" />
+    <link rel="shortcut icon" href="../media/logo.png" type="image/x-icon" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
 
-  <div class="container">
-    <header>
-      <div class="header-title">
-        <h1>ATS Dashboard</h1>
-        <p>Manage subscriptions & users</p>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>ATS Admin</span>
+        </div>
+        <button class="sidebar-toggle" id="sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
       </div>
-      <div class="admin-profile">
-        <button id="logout">Log Out</button>
-      </div>
-      </div>
-    </header>
 
-    <div id="stats-grid" class="stats-grid"></div>
+      <nav class="sidebar-nav">
+        <a href="#dashboard" class="nav-item active" data-page="dashboard">
+          <i class="fa-solid fa-gauge-high"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#users" class="nav-item" data-page="users">
+          <i class="fa-solid fa-users"></i>
+          <span>Users</span>
+        </a>
+        <a href="#boards" class="nav-item" data-page="boards">
+          <i class="fa-solid fa-microchip"></i>
+          <span>Boards</span>
+        </a>
+        <a href="#analytics" class="nav-item" data-page="analytics">
+          <i class="fa-solid fa-chart-bar"></i>
+          <span>Analytics</span>
+        </a>
+        <a href="#plans" class="nav-item" data-page="plans">
+          <i class="fa-solid fa-tags"></i>
+          <span>Plans</span>
+        </a>
+        <a href="#settings" class="nav-item" data-page="settings">
+          <i class="fa-solid fa-gear"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
 
-    <div class="controls">
-      <div class="search-wrapper">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input
-          type="text"
-          id="search"
-          placeholder="Search users..."
-          class="search-input"
-        />
+      <div class="sidebar-footer">
+        <div class="admin-profile">
+          <div class="avatar">AD</div>
+          <div class="admin-meta">
+            <p class="admin-name">Admin User</p>
+            <p class="admin-role">Administrator</p>
+          </div>
+        </div>
+        <button id="logout" class="logout-btn">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Logout</span>
+        </button>
       </div>
-      <div id="filter-bar" class="filter-group"></div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-toggle" id="mobile-toggle">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <h1 id="page-title">Dashboard Overview</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+              type="text"
+              id="global-search"
+              placeholder="Search anything..."
+              class="search-input"
+            />
+          </div>
+          <button class="notification-btn">
+            <i class="fa-solid fa-bell"></i>
+            <span class="badge">3</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dashboard Page -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <h2>Welcome back, Admin!</h2>
+          <p class="text-muted">
+            Here's what's happening with your system today
+          </p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div id="stats-grid" class="stats-grid"></div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <h3>Quick Actions</h3>
+          <div class="action-grid">
+            <button class="action-card" data-action="goto-users">
+              <i class="fa-solid fa-user-plus"></i>
+              <span>Add User</span>
+            </button>
+            <button class="action-card" data-action="goto-boards">
+              <i class="fa-solid fa-microchip"></i>
+              <span>Register Board</span>
+            </button>
+            <button class="action-card" data-action="bulk-renew">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Bulk Renew</span>
+            </button>
+            <button class="action-card" data-action="export-data">
+              <i class="fa-solid fa-download"></i>
+              <span>Export Data</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>User Growth</h3>
+              
+            </div>
+            <div class="chart-container-wrapper">
+              <canvas id="userGrowthChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>Subscription Status</h3>
+              <p class="text-muted">Current distribution</p>
+            </div>
+            <div class="chart-container-wrapper">
+              <canvas id="subscriptionChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        
+
+        <!-- Recent Activity -->
+        <!-- <div class="activity-card">
+          <h3>Recent Activity</h3>
+          <div id="recent-activity" class="activity-list"></div>
+        </div> -->
+      </div>
+
+      <!-- Users Page -->
+      <div class="page" id="page-users">
+        <div class="page-header">
+          <h2>User Management</h2>
+          <button class="btn-primary" data-action="add-user">
+            <i class="fa-solid fa-plus"></i> Add User
+          </button>
+        </div>
+
+        <div class="controls">
+          <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+              type="text"
+              id="search"
+              placeholder="Search users..."
+              class="search-input"
+            />
+          </div>
+          <div id="filter-bar" class="filter-group"></div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Plan</th>
+                <th>Board ID</th>
+                <th>Expiry</th>
+                <th class="th-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="user-list"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Boards Page -->
+      <div class="page" id="page-boards">
+        <div class="page-header">
+          <h2>Board Management</h2>
+          <button class="btn-primary" data-action="register-board">
+            <i class="fa-solid fa-plus"></i> Register Board
+          </button>
+        </div>
+
+        <div class="controls">
+          <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+              type="text"
+              id="board-search"
+              placeholder="Search boards..."
+              class="search-input"
+            />
+          </div>
+          <div class="filter-group">
+            <button class="filter-btn active" data-board-filter="all">
+              All
+            </button>
+            <button class="filter-btn" data-board-filter="paired">
+              Paired
+            </button>
+            <button class="filter-btn" data-board-filter="unpaired">
+              Unpaired
+            </button>
+          </div>
+        </div>
+
+        <div id="boards-grid" class="boards-grid"></div>
+      </div>
+
+      <!-- Analytics Page -->
+      <div class="page" id="page-analytics">
+        <div class="page-header">
+          <h2>Analytics & Reports</h2>
+          <div class="date-range-picker">
+            <input type="date" id="start-date" class="date-input" />
+            <span>to</span>
+            <input type="date" id="end-date" class="date-input" />
+            <button class="btn-secondary" data-action="update-analytics">
+              Apply
+            </button>
+          </div>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="chart-card large">
+            <div class="chart-header">
+              <h3>Revenue Trends</h3>
+            </div>
+            <div class="chart-container-wrapper">
+              <canvas id="revenueChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>Active Boards</h3>
+              <p class="text-muted">Online vs Offline</p>
+            </div>
+            <div class="chart-container-wrapper">
+              <canvas id="boardStatusChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>User Retention</h3>
+              <p class="text-muted">Monthly retention rate</p>
+            </div>
+            <div class="chart-container-wrapper">
+              <canvas id="retentionChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subscription Plans Page -->
+      <div class="page" id="page-plans">
+        <div class="page-header">
+          <h2>Subscription Plans</h2>
+          <button class="btn-primary" data-action="create-plan">
+            <i class="fa-solid fa-plus"></i> Create Plan
+          </button>
+        </div>
+
+        <div class="plans-grid" id="plans-grid"></div>
+      </div>
+
+      <!-- Settings Page -->
+      <div class="page" id="page-settings">
+        <div class="page-header">
+          <h2>Settings</h2>
+        </div>
+
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3><i class="fa-solid fa-bell"></i> Notifications</h3>
+            <div class="setting-item">
+              <label>Email notifications</label>
+              <label class="toggle">
+                <input type="checkbox" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-item">
+              <label>Expiry alerts (7 days before)</label>
+              <label class="toggle">
+                <input type="checkbox" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3><i class="fa-solid fa-dollar-sign"></i> Pricing</h3>
+            <div class="setting-item">
+              <label>Free Trial Duration (days)</label>
+              <input type="number" value="30" class="setting-input" />
+            </div>
+            <div class="setting-item">
+              <label>Standard Plan Price (RWF)</label>
+              <input type="number" value="130000" class="setting-input" />
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3><i class="fa-solid fa-server"></i> System</h3>
+            <div class="setting-item">
+              <label>API Endpoint</label>
+              <input
+                type="text"
+                value="http://localhost:3000/backend/main.php"
+                class="setting-input"
+              />
+            </div>
+            <button class="btn-primary">Save Settings</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Modals -->
+    <div id="modal-backdrop" class="modal-backdrop">
+      <!-- Renew Modal -->
+      <div id="renew-modal" class="modal">
+        <div class="modal-header">
+          <h2>Renew Subscription</h2>
+          <button class="modal-close" data-action="close-modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <p id="renew-target" class="modal-desc"></p>
+        <div class="option-card-container" id="renew-plans-container">
+          <div id="renew-trial" class="option-card">
+            <div>
+              <span class="option-title">Free Trial</span>
+              <span class="option-desc">30 days access</span>
+            </div>
+            <span class="option-price">Free</span>
+          </div>
+
+          <div id="renew-standard" class="option-card">
+            <div>
+              <span class="option-title">Standard Plan</span>
+              <span class="option-desc">Full access for 1 year</span>
+            </div>
+            <span class="option-price">RWF 130,000</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button
+            id="cancel-renew"
+            class="btn-secondary btn-full"
+            data-action="close-modal"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <!-- Password Modal -->
+      <div id="pwd-modal" class="modal">
+        <div class="modal-header">
+          <h2>Reset Password</h2>
+          <button class="modal-close" data-action="close-modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input
+            type="password"
+            id="new-pwd"
+            placeholder="Enter new password"
+            class="form-input"
+          />
+        </div>
+        <div class="modal-actions">
+          <button id="update-pwd" class="btn-primary btn-full">
+            Update Password
+          </button>
+          <button
+            id="cancel-pwd"
+            class="btn-secondary btn-full"
+            data-action="close-modal"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <!-- Register Board Modal -->
+      <div id="register-board-modal" class="modal">
+        <div class="modal-header">
+          <h2>Register New Board</h2>
+          <button class="modal-close" data-action="close-modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <form id="register-board-form">
+          <!-- <div class="form-group">
+          <label>Board ID / Serial Number</label>
+          <input type="text" id="board-id" placeholder="e.g., ATS-2024-001" class="form-input" required />
+        </div> -->
+          <div class="form-group">
+            <label>Board Name</label>
+            <input
+              type="text"
+              id="board-name"
+              placeholder="e.g., Main Control Board"
+              class="form-input"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input
+              type="text"
+              id="board-location"
+              placeholder="e.g., Building A, Floor 2"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Password</label>
+            <input
+              type="text"
+              id="board-password"
+              placeholder="Password"
+              class="form-input"
+              required
+            />
+          </div>
+          <div class="modal-actions">
+            <button type="submit" class="btn-primary btn-full">
+              Register Board
+            </button>
+            <button
+              type="button"
+              class="btn-secondary btn-full"
+              data-action="close-modal"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Pair Board Modal -->
+      <div id="pair-board-modal" class="modal">
+        <div class="modal-header">
+          <h2>Pair Board with User</h2>
+          <button class="modal-close" data-action="close-modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <p id="pair-board-info" class="modal-desc"></p>
+        <div class="form-group">
+          <label>Select User</label>
+          <select id="pair-user-select" class="form-select"></select>
+          <input
+            type="text"
+            id="pair-board-id"
+            class="form-input"
+            hidden
+            readonly
+            style="background: var(--bg-gray); cursor: not-allowed"
+          />
+        </div>
+        <div class="modal-actions">
+          <button id="confirm-pair" class="btn-primary btn-full">
+            Confirm Pairing
+          </button>
+          <button class="btn-secondary btn-full" data-action="close-modal">
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <!-- Edit Board Modal -->
+      <div id="edit-board-modal" class="modal">
+        <div class="modal-header">
+          <h2>Edit Board</h2>
+          <button class="modal-close" data-action="close-modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <form id="edit-board-form">
+          <div class="form-group">
+            <input
+              type="text"
+              id="edit-board-id"
+              class="form-input"
+              hidden
+              readonly
+              style="background: var(--bg-gray); cursor: not-allowed"
+            />
+          </div>
+          <div class="form-group">
+            <label>Board Name</label>
+            <input
+              type="text"
+              id="edit-board-name"
+              placeholder="e.g., Main Control Board"
+              class="form-input"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input
+              type="text"
+              id="edit-board-location"
+              placeholder="e.g., Building A, Floor 2"
+              class="form-input"
+            />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input
+              type="text"
+              id="edit-board-password"
+              placeholder="Password"
+              class="form-input"
+              required
+            />
+          </div>
+
+          <div class="modal-actions">
+            <button type="submit" class="btn-primary btn-full">
+              Save Changes
+            </button>
+            <button
+              type="button"
+              class="btn-secondary btn-full"
+              data-action="close-modal"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Create/Edit Plan Modal -->
+      <div id="plan-modal" class="modal">
+        <div class="modal-header">
+          <h2 id="plan-modal-title">Create Subscription Plan</h2>
+          <button class="modal-close" data-action="close-modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <form id="plan-form">
+          <div class="form-group">
+            <label>Plan Name <span style="color: var(--danger)">*</span></label>
+            <input
+              type="text"
+              id="plan-name"
+              placeholder="e.g., Premium Plan"
+              class="form-input"
+              required
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label
+                >Price (RWF) <span style="color: var(--danger)">*</span></label
+              >
+              <input
+                type="number"
+                id="plan-price"
+                placeholder="e.g., 130000"
+                class="form-input"
+                required
+                min="0"
+              />
+            </div>
+            <div class="form-group">
+              <label
+                >Duration (Days)
+                <span style="color: var(--danger)">*</span></label
+              >
+              <input
+                type="number"
+                id="plan-duration"
+                placeholder="e.g., 365"
+                class="form-input"
+                required
+                min="1"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Plan Type <span style="color: var(--danger)">*</span></label>
+            <select id="plan-type" class="form-select" required>
+              <option value="">-- Select Type --</option>
+              <option value="free_trial">Free Trial</option>
+              <option value="basic">Basic</option>
+              <option value="standard">Standard</option>
+              <option value="premium">Premium</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea
+              id="plan-description"
+              placeholder="Plan features and benefits..."
+              class="form-textarea"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Features (one per line)</label>
+            <textarea
+              id="plan-features"
+              placeholder="e.g.,
+Unlimited users
+24/7 Support
+Advanced analytics"
+              class="form-textarea"
+              rows="5"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="plan-popular" class="form-checkbox" />
+              <span>Mark as popular/recommended plan</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                id="plan-active"
+                class="form-checkbox"
+                checked
+              />
+              <span>Plan is active and available for purchase</span>
+            </label>
+          </div>
+
+          <div class="modal-actions">
+            <button type="submit" class="btn-primary btn-full">
+              <i class="fa-solid fa-save"></i> Save Plan
+            </button>
+            <button
+              type="button"
+              class="btn-secondary btn-full"
+              data-action="close-modal"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Status</th>
-            <th>Plan</th>
-            <th>Expiry</th>
-            <th class="th-right">Action</th>
-          </tr>
-        </thead>
-        <tbody id="user-list"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Modals -->
-  <div id="modal-backdrop" class="modal-backdrop">
-    <!-- Renew Modal -->
-    <div id="renew-modal" class="modal">
-      <h2 class="modal-title">Renew Plan</h2>
-      <p id="renew-target" class="modal-desc"></p>
-
-      <div id="renew-trial" class="option-card">
-        <span>Free trial</span>
-        <span class="option-price">Free</span>
-      </div>
-
-      <div id="renew-standard" class="option-card popular">
-        <span>Standard</span>
-        <span class="option-price">RWF 130 000</span>
-      </div>
-
-      <button id="cancel-renew" class="btn-renew btn-full mt-1 btn-secondary">
-        Cancel
-      </button>
-    </div>
-
-    <!-- Password Modal -->
-    <div id="pwd-modal" class="modal">
-      <h2 class="modal-title">Reset Password</h2>
-      <input
-        type="password"
-        id="new-pwd"
-        placeholder="New password"
-        class="search-input pwd-input"
-      />
-      <button id="update-pwd" class="btn-renew btn-full">Update</button>
-      <button id="cancel-pwd" class="btn-renew btn-full mt-05 btn-ghost">
-        Cancel
-      </button>
-    </div>
-  </div>
-
-  <script src="javascript.js"></script>
-</body>
+    <script src="javascript.js" type="module"></script>
+  </body>
 </html>

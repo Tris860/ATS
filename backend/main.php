@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // Include manager.php which is assumed to contain User, TimetableManager, and Commander classes
-require_once 'manager.php'; 
+require_once 'manager.php';
 
 // Database connection details
 $servername = "localhost";
@@ -72,6 +72,7 @@ try {
     $userManager = new User($conn);
     $timeChecker = new TimeChecker($conn);
     $timetableManager = new TimetableManager($conn);
+    $AdminAction = new Administator($conn);
     $commander = new Commander($conn); // Instantiate Commander as it's part of manager.php
 
     $action = ''; // Initialize action to empty
@@ -138,7 +139,7 @@ try {
                 http_response_code(405);
                 $response = ["success" => false, "message" => "Invalid request method for login. Use POST."];
             }
-        break;
+            break;
         case 'logout':
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $response = $userManager->logout(); // This destroys session
@@ -153,15 +154,15 @@ try {
             $userEmail = $loggedInUserEmail ?? 'Guest User';
             $timetableEnabled = $_SESSION['timetable_enabled'] ?? true; // Default to true if not set
             $hardSwitchEnabled = $_SESSION['hard_switch_enabled'] ?? true; // Default to true if not set
-            
+
             // If not logged in, ensure default values are returned
             if (!$isLoggedIn) {
                 $userEmail = 'Guest User';
-                $timetableEnabled = true; 
-                $hardSwitchEnabled = true; 
+                $timetableEnabled = true;
+                $hardSwitchEnabled = true;
             }
             $data = $userManager->getAssignedDevice($userEmail);
-            $response = ["success" => true, "email" => $userEmail, "timetable_enabled" => $timetableEnabled, "hard_switch_enabled" => $hardSwitchEnabled,"device" => $data];
+            $response = ["success" => true, "email" => $userEmail, "timetable_enabled" => $timetableEnabled, "hard_switch_enabled" => $hardSwitchEnabled, "device" => $data];
             break;
 
         case 'change_password':
@@ -199,7 +200,7 @@ try {
                 $response = ["success" => false, "message" => "Invalid request method for change email. Use POST."];
             }
             break;
-        
+
         case 'toggle_timetable_visibility':
             error_log("DEBUG-API: Handling toggle_timetable_visibility action.");
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -246,7 +247,7 @@ try {
                     break;
                 }
                 // Retrieve hard switch status from session
-                $hardSwitchStatus = $_SESSION['hard_switch_enabled'] ?? true; 
+                $hardSwitchStatus = $_SESSION['hard_switch_enabled'] ?? true;
 
                 if (!$hardSwitchStatus) {
                     $response = ["success" => false, "message" => "Bell cannot be rung: Hard switch is OFF."];
@@ -266,7 +267,7 @@ try {
             // This is a GET request, so get 'day' from $_GET
             $dayFilter = $_GET['day'] ?? null;
             // In a real app, you'd pass $loggedInUserId here to filter periods by user ownership
-            $periods = $timetableManager->getAllPeriods(owner: $loggedInUserEmail ?? '' ,dayOfWeek:($dayFilter));
+            $periods = $timetableManager->getAllPeriods(owner: $loggedInUserEmail ?? '', dayOfWeek: ($dayFilter));
             $response = ["success" => true, "periods" => $periods];
             break;
 
@@ -281,7 +282,7 @@ try {
                 // Data comes from JSON input for POST requests, now in $requestData
                 $data = $requestData;
                 // Add user_id to the data before passing to TimetableManager
-                $data['user_id'] = $loggedInUserId; 
+                $data['user_id'] = $loggedInUserId;
                 $insertId = $timetableManager->addPeriod($data, $loggedInUserEmail ?? '');
                 $response = ["success" => true, "message" => "Period added successfully with ID: " . $insertId];
             } else {
@@ -301,13 +302,13 @@ try {
                 // Data comes from JSON input for POST requests, now in $requestData
                 $data = $requestData;
                 $id = (int)($data['id'] ?? 0); // Get ID from the request body
-                
+
                 if ($id <= 0) {
                     throw new InvalidArgumentException("Invalid ID provided for update.");
                 }
 
                 // Add user_id to the data for ownership verification in TimetableManager
-                $data['user_id'] = $loggedInUserId; 
+                $data['user_id'] = $loggedInUserId;
                 $updated = $timetableManager->updatePeriod($id, $data);
                 if ($updated) {
                     $response = ["success" => true, "message" => "Period updated successfully."];
@@ -335,7 +336,7 @@ try {
                     throw new InvalidArgumentException("Invalid ID provided for delete.");
                 }
                 // Add user_id to the data for ownership verification in TimetableManager
-                $data['user_id'] = $loggedInUserId; 
+                $data['user_id'] = $loggedInUserId;
                 $deleted = $timetableManager->deletePeriod($id);
                 if ($deleted) {
                     $response = ["success" => true, "message" => "Period deleted successfully."];
@@ -348,14 +349,14 @@ try {
             }
             break;
         case 'is_current_time_in_period':
-         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-               $response = $timeChecker->checkCurrentTimeInPeriod();
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                $response = $timeChecker->checkCurrentTimeInPeriod();
                 // $response = ["success" => true, "message" => "SHIMO method for change email. Use POST."];
             } else {
                 http_response_code(405);
                 $response = ["success" => false, "message" => "Invalid request method for change email. Use POST."];
-          }
-        break;
+            }
+            break;
         case 'save_timezone':
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$isLoggedIn || !$loggedInUserId) {
@@ -372,7 +373,7 @@ try {
                 http_response_code(405);
                 $response = ["success" => false, "message" => "Invalid request method for save timezone. Use POST."];
             }
-        break;
+            break;
         case 'get_timezone':
             if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 if (!$isLoggedIn || !$loggedInUserId) {
@@ -385,137 +386,493 @@ try {
                 http_response_code(405);
                 $response = ["success" => false, "message" => "Invalid request method for get timezone. Use GET."];
             }
-        break;
+            break;
         case 'wemos_auth':
-            if($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $username = $_POST['username'] ?? null;
                 $password = $_POST['password'] ?? null;
-                $response =$userManager->WEMOS_AUTH($username, $password);
+                $response = $userManager->WEMOS_AUTH($username, $password);
                 //  $response= ["success" => false, "message" => $_POST['password'].' Authentication data (username and password) is missing.'];
             } else {
                 http_response_code(400); // Bad Request
-                $response= ["success" => false, "message" => 'Authentication data (username and password) is missing.'];
+                $response = ["success" => false, "message" => 'Authentication data (username and password) is missing.'];
             }
-        break;
+            break;
         case 'get_user_device':
-          if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-              $email = $_POST['email'] ?? null;
-              $devicename = $userManager->getAssignedDevice($email); // Custom method
-              $response = $devicename ? ["success" => true, "device_name" => $devicename] : ["success" => false, "message" => "No device assigned."];
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $email = $_POST['email'] ?? null;
+                $devicename = $userManager->getAssignedDevice($email); // Custom method
+                $response = $devicename ? ["success" => true, "device_name" => $devicename] : ["success" => false, "message" => "No device assigned."];
             } else {
-               http_response_code(405);
-               $response = ["success" => false, "message" => "Invalid request method for get_user_device. Use POST."];
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method for get_user_device. Use POST."];
+            }
+            break;
+
+
+        case 'get_all_users':
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    $response = ["success" => false, "message" => "Not logged in to fetch users."];
+                    http_response_code(401);
+                    break;
+                }
+
+                $response = ["success" => true, "data" => $AdminAction->getAllAdmins()];
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method for get_all_users. Use GET."];
+            }
+            break;
+
+
+        case 'update_password':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    $response = ["success" => false, "message" => "Not logged in to update password."];
+                    http_response_code(401);
+                    break;
+                }
+
+                $newPassword = $_POST['new_password'] ?? null;
+                $targetUserId = isset($_POST['user_id']) ? intval($_POST['user_id']) : null; // ✅ cast to int
+
+                if (!$newPassword || !$targetUserId) {
+                    $response = ["success" => false, "message" => "Missing parameters (new_password or user_id)."];
+                    http_response_code(400);
+                    break;
+                }
+
+                // ✅ update password for the client, not the admin
+                $response = $timeChecker->updateUserPassword($targetUserId, $newPassword);
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method for update_password. Use POST."];
+            }
+            break;
+
+
+
+        case 'get_users_by_status':
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    $response = ["success" => false, "message" => "Not logged in to fetch users by status."];
+                    http_response_code(401);
+                    break;
+                }
+                $status = $_GET['status'] ?? null;
+                if ($status === null) {
+                    $response = ["success" => false, "message" => "Missing status parameter."];
+                    http_response_code(400);
+                    break;
+                }
+                $response = $timeChecker->getUsersWithSubscriptionByStatus((int)$status);
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method for get_users_by_status. Use GET."];
+            }
+            break;
+        case 'get_plans':
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+
+                $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
+
+                $plans = $AdminAction->getPlans($id);
+                $response = ["success" => true, "data" => $plans, "message" => "Plans retrieved successfully.".$id];
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method. Use GET."];
+            }
+            break;
+        case 'update_subscription':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    $response = ["success" => false, "message" => "Not logged in to create plan."];
+                    http_response_code(401);
+                    break;
+                }
+                $plan_type = $requestData['plan_type'] ?? null;
+                $userId = $requestData['user_id'] ?? null;
+
+                if (!$plan_type || !$userId) {
+                    $response = ["success" => false, "message" => "Missing parameters for updating subscription."];
+                    http_response_code(400);
+                    break;
+                }
+
+                $response = ["success" => true, "message" => $AdminAction->updateSubscription_user($userId, $plan_type)];
+
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method for update Plan. Use POST."];
+            }
+            break;
+
+        case 'create_plan':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    $response = ["success" => false, "message" => "Not logged in to create plan."];
+                    http_response_code(401);
+                    break;
+                }
+
+                $planDictionary = [
+                    'name'            => $requestData['plan_name'] ?? null,
+                    'price'           => $requestData['price'] ?? null,
+                    'features'        => $requestData['features'] ?? null,
+                    'type_plan'       => $requestData['type_plan'] ?? null, // FIXED
+                    'description'     => $requestData['description'] ?? null,
+                    'duration' => isset($requestData['duration_days'])
+                        ? intval($requestData['duration_days'] / 30)
+                        : null,
+                    'is_popular'      => isset($requestData['is_popular']) ? (bool)$requestData['is_popular'] : false,
+                    'is_active'       => isset($requestData['is_active']) ? (bool)$requestData['is_active'] : false,
+                ];
+
+                if (!$planDictionary['name'] || $planDictionary['price'] === null || !$planDictionary['duration']) {
+                    $response = ["success" => false, "message" => "Missing parameters for creating plan."];
+                    http_response_code(400);
+                    break;
+                }
+
+                $response = ["success" => true, "message" => $AdminAction->createPlan($planDictionary)];
+
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method for create_plan. Use POST."];
+            }
+            break;
+        case 'update_plan':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    http_response_code(401);
+                    $response = ["success" => false, "message" => "Not logged in to update plan."];
+                    break;
+                }
+
+                if (!isset($requestData['id'])) {
+                    http_response_code(400);
+                    $response = ["success" => false, "message" => $requestData['duration_days']];
+                    break;
+                }
+
+                $planId = (int)$requestData['id'];
+
+                $planDictionary = [
+                    'name'        => $requestData['plan_name'] ?? null,
+                    'price'       => $requestData['price'] ?? null,
+                    'features'    => $requestData['features'] ?? null,
+                    'type_plan'   => $requestData['type_plan'] ?? null,
+                    'description' => $requestData['description'] ?? null,
+                    'duration'    => isset($requestData['duration_days'])
+                        ? intval($requestData['duration_days'] / 30)
+                        : null,
+                ];
+
+                $updated = $AdminAction->updatePlan($planId, $planDictionary);
+                $response = ["success" => $updated];
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method. Use PUT."];
+            }
+            break;
+        case 'delete_plan':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    http_response_code(401);
+                    $response = ["success" => false, "message" => "Not logged in to delete plan."];
+                    break;
+                }
+
+                if (!isset($requestData['id'])) {
+                    http_response_code(400);
+                    $response = ["success" => false, "message" => "Plan ID is required."];
+                    break;
+                }
+
+                $planId = (int)$requestData['id'];
+
+                $deleted = $AdminAction->deletePlan($planId);
+                $response = ["success" => $deleted];
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method. Use DELETE."];
+            }
+            break;
+
+        case 'get_all_boards':
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+
+                $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
+
+                $boards = $AdminAction->get_all_boards($id);
+                $response = ["success" => true, "data" => $boards];
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method. Use GET."];
+            }
+            break; 
+        case "register_board":
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    http_response_code(401);
+                    $response = ["success" => false, "message" => "Not logged in to register board."];
+                    break;
+                }
+                $boardDictionary = [
+                    'name' => $requestData['name'] ?? null,
+                    'location' => $requestData['location'] ?? null,
+                    'password' => $requestData['password'] ?? null,
+                ];
+                
+
+                if (!$boardDictionary['name'] || !$boardDictionary['location'] || !$boardDictionary['password']) {
+                    http_response_code(400);
+                    $response = ["success" => false, "message" => "Missing parameters for registering board."];
+                    break;
+                }
+
+                $response = ["success" => true, "message" => $AdminAction->register_board($boardDictionary)];
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method. Use POST."];
+            }
+        break;   
+        
+        case "edit_board":
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    http_response_code(401);
+                    $response = ["success" => false, "message" => "Not logged in to update board."];
+                    break;
+                }
+                if (!isset($requestData['id'])) {
+                    http_response_code(400);
+                    $response = ["success" => false, "message" => "Board ID is required."];
+                    break;
+                }
+
+                $boardId = (int)$requestData['id'];
+
+                $boardDictionary = [
+                    'name' => $requestData['name'] ?? null,
+                    'location' => $requestData['location'] ?? null,
+                    'password' => $requestData['password'] ?? null,
+                ];
+                if (!$boardDictionary['name'] || !$boardDictionary['location'] || !$boardDictionary['password']) {
+                    $response = ["success" => false, "message" => "Missing parameters for creating plan."];
+                    http_response_code(400);
+                    break;
+                }
+
+                $updated = $AdminAction->update_board($boardId, $boardDictionary);
+                $response = ["success" => $updated];
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method. Use POST."];
+            }
+        break;
+        case "delete_board":
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    http_response_code(401);
+                    $response = ["success" => false, "message" => "Not logged in to delete board."];
+                    break;
+                }
+                if (!isset($requestData['id'])) {
+                    http_response_code(400);
+                    $response = ["success" => false, "message" => "Board ID is required."];
+                    break;
+                }
+
+                $boardId = (int)$requestData['id'];
+
+                $deleted = $AdminAction->delete_board($boardId);
+                $response = ["success" => $deleted];
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method. Use POST."];
+            }
+        break;
+        case 'get_unpaired_users':
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    http_response_code(401);
+                    $response = ["success" => false, "message" => "Not logged in to fetch unpaired boards."];
+                    break;
+                }
+                $response = ["success" => true, "data" => $AdminAction->get_unpaired_users()];
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method. Use GET."];
+            }
+        break;
+        case 'pair_board':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    http_response_code(401);
+                    $response = ["success" => false, "message" => "Not logged in to pair user to board."];
+                    break;
+                }
+                $userId = isset($requestData['user_id']) ? intval($requestData['user_id']) : null;
+                $boardId = isset($requestData['board_id']) ? intval($requestData['board_id']) : null;
+
+                if (!$userId || !$boardId) {
+                    http_response_code(400);
+                    $response = ["success" => false, "message" => "Missing parameters (user_id or board_id)."];
+                    break;
+                }
+
+                $response = ["success" => true, "message" => $AdminAction->pair_user_to_board($userId, $boardId)];
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method. Use POST."];
+            }
+        break;
+        case 'unpair_board':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    http_response_code(401);
+                    $response = ["success" => false, "message" => "Not logged in to unpair user from board."];
+                    break;
+                }
+                $userId = isset($requestData['user_id']) ? intval($requestData['user_id']) : null;
+                $boardId = isset($requestData['board_id']) ? intval($requestData['board_id']) : null;
+
+                if (!$userId || !$boardId) {
+                    http_response_code(400);
+                    $response = ["success" => false, "message" => "Missing parameters (user_id or board_id)."];
+                    break;
+                }
+
+                $response = ["success" => true, "message" => $AdminAction->unpair_user_from_board($userId, $boardId)];
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method. Use POST."];
+            }
+        break;
+        case 'get_all_users_admin':
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    http_response_code(401);
+                    $response = ["success" => false, "message" => "Not logged in to fetch users."];
+                    break;
+                }
+                if ($_GET['id'] ?? null) {
+                    $response = ["success" => true, "data" => $AdminAction->get_users_with_subscriptions((int)$_GET['id'])];
+                } else {
+                $response = ["success" => true, "data" => $AdminAction->get_users_with_subscriptions()];
+                }
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method. Use GET."];
             }
         break;
 
+        case 'reset_password_user':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    $response = ["success" => false, "message" => "Not logged in to update password."];
+                    http_response_code(401);
+                    break;
+                }
 
-    case 'get_all_users':
-        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            if (!$isLoggedIn || !$loggedInUserId) {
-                $response = ["success" => false, "message" => "Not logged in to fetch users."];
-                http_response_code(401);
-                break;
+                $newPassword = $requestData['new_password'] ?? null;
+                $targetUserId = isset($requestData['user_id']) ? intval($requestData['user_id']) : null; // ✅ cast to int
+
+                if (!$newPassword || !$targetUserId) {
+                    $response = ["success" => false, "message" => "Missing parameters (new_password or user_id)."];
+                    http_response_code(400);
+                    break;
+                }
+
+                // ✅ update password for the client, not the admin
+                $response = $timeChecker->updateUserPassword($targetUserId, $newPassword);
+            } else {
+                http_response_code(405);
+                $response = ["success" => false, "message" => "Invalid request method for update_password. Use POST."];
             }
-            
-            $response = $timeChecker->getAllUsers($loggedInUserId);
-        } else {
-            http_response_code(405);
-            $response = ["success" => false, "message" => "Invalid request method for get_all_users. Use GET."];
-        }
-        break;
-  
-case 'update_subscription':
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!$isLoggedIn || !$loggedInUserId) {
-            $response = ["success" => false, "message" => "Not logged in to update subscription."];
-            http_response_code(401);
             break;
-        }
 
-        $planType = $_POST['plan_type'] ?? null;
-        $targetUserId = isset($_POST['user_id']) ? intval($_POST['user_id']) : null; // ✅ cast to int
+        case 'get_subscription_status_distribution':
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    $response = ["success" => false, "message" => "Not logged in to update password."];
+                    http_response_code(401);
+                    break;
+                }
+                $response = ["success" => true, "data" => $AdminAction->get_subscription_chart_data()];
 
-        if (!$planType || !$targetUserId) {
-            $response = ["success" => false, "message" => "Missing parameters (plan_type or user_id)."];
-            http_response_code(400);
-            break;
-        }
-
-        // ✅ update subscription for the client, not the admin
-        $response = $timeChecker->updateSubscription($targetUserId, $planType);
-
-    } else {
-        http_response_code(405);
-        $response = ["success" => false, "message" => "Invalid request method for update_subscription. Use POST."];
-    }
-    break;
-
-case 'update_password':
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!$isLoggedIn || !$loggedInUserId) {
-            $response = ["success" => false, "message" => "Not logged in to update password."];
-            http_response_code(401);
-            break;
-        }
-
-        $newPassword = $_POST['new_password'] ?? null;
-        $targetUserId = isset($_POST['user_id']) ? intval($_POST['user_id']) : null; // ✅ cast to int
-
-        if (!$newPassword || !$targetUserId) {
-            $response = ["success" => false, "message" => "Missing parameters (new_password or user_id)."];
-            http_response_code(400);
-            break;
-        }
-
-        // ✅ update password for the client, not the admin
-        $response = $timeChecker->updateUserPassword($targetUserId, $newPassword);
-
-    } else {
-        http_response_code(405);
-        $response = ["success" => false, "message" => "Invalid request method for update_password. Use POST."];
-    }
-    break;
-
-
-
-    case 'get_users_by_status':
-        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            if (!$isLoggedIn || !$loggedInUserId) {
-                $response = ["success" => false, "message" => "Not logged in to fetch users by status."];
-                http_response_code(401);
-                break;
             }
-            $status = $_GET['status'] ?? null;
-            if ($status === null) {
-                $response = ["success" => false, "message" => "Missing status parameter."];
-                http_response_code(400);
-                break;
+            else{
+                $response = ["success" => false, "message" => "Invalid request method for user_class_pie. Use GET."];
             }
-            $response = $timeChecker->getUsersWithSubscriptionByStatus((int)$status);
-        } else {
-            http_response_code(405);
-            $response = ["success" => false, "message" => "Invalid request method for get_users_by_status. Use GET."];
-        }
-        break;
 
+            break;
+        case 'get_admin_new_users_by_month':
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    $response = ["success" => false, "message" => "Not logged in to update password."];
+                    http_response_code(401);
+                    break;
+                }
+                $response = ["success" => true, "data" => $AdminAction->get_admin_new_users_by_month()];
+
+            }
+            else{
+                $response = ["success" => false, "message" => "Invalid request method for user_class_pie. Use GET."];
+            }
+
+            break;
+        case 'get_monthly_revenue':
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    $response = ["success" => false, "message" => "Not logged in to update password."];
+                    http_response_code(401);
+                    break;
+                }
+                $response = ["success" => true, "data" => $AdminAction->get_monthly_revenues()];
+
+            }
+            else{
+                $response = ["success" => false, "message" => "Invalid request method for user_class_pie. Use GET."];
+            }
+
+            break;
+        case 'get_retention':
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                if (!$isLoggedIn || !$loggedInUserId) {
+                    $response = ["success" => false, "message" => "Not logged in to update password."];
+                    http_response_code(401);
+                    break;
+                }
+                $response = ["success" => true, "data" => $AdminAction->get_monthly_retention()];
+
+            }
+            else{
+                $response = ["success" => false, "message" => "Invalid request method for get_retention. Use GET."];
+            }
+
+            break;
 
         default:
             http_response_code(400); // Bad Request
             $response = ["success" => false, "message" => "Unknown action: " . ($action === '' ? '[empty]' : $action)];
             break;
     }
-
 } catch (InvalidArgumentException $e) {
     http_response_code(400); // Bad Request for client input errors
     $response = ["success" => false, "message" => $e->getMessage()];
 } catch (mysqli_sql_exception $e) {
-    http_response_code(500); // Internal Server Error for database issues
+    http_response_code(500);
     error_log("Database Error: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
-    $response = ["success" => false, "message" => "A database error occurred.". $e->getMessage()." Please try again later."];
+    $response = ["success" => false, "message" => "A database error occurred." . $e->getMessage() . " Please try again later."];
 } catch (Exception $e) {
-    http_response_code(500); // Internal Server Error for any other unexpected errors
+    http_response_code(500); 
     error_log("General Error: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
-    $response = ["success" => false, "message" => "An unexpected server error occurred. Please try again."];
+    $response = ["success" => false, "message" => "An unexpected server error occurred. Please try again.". $e->getMessage()];
 } finally {
     if ($conn) {
         $conn->close();
@@ -523,5 +880,3 @@ case 'update_password':
 }
 
 echo json_encode($response);
-
-?>
