@@ -1,144 +1,384 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IoT Command Center</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; min-height: 100vh; }
-  </style>
-</head>
-<body class="flex items-center justify-center p-4">
-  <div class="max-w-xl w-full bg-white shadow-2xl rounded-xl p-8 space-y-6">
-    <h1 class="text-3xl font-extrabold text-gray-900 text-center">Wemos IoT Command</h1>
-    <p class="text-center text-sm text-gray-600">
-      Connected to Unified Server at <code>combined-server-1fyr.onrender.com</code>
-    </p>
-
-    <!-- Browser WS Status -->
-    <div id="status" class="flex items-center justify-center p-3 rounded-lg shadow-inner bg-gray-100">
-      <div id="status-dot" class="w-3 h-3 rounded-full mr-2 bg-gray-400"></div>
-      <span id="status-text" class="text-sm font-medium text-gray-600">Connecting...</span>
-    </div>
-
-    <!-- Device Status Indicator -->
-    <div id="device-status" class="flex items-center justify-center p-3 rounded-lg shadow-inner bg-gray-100">
-      <div id="device-dot" class="w-3 h-3 rounded-full mr-2 bg-red-500"></div>
-      <span id="device-text" class="text-sm font-medium text-gray-600">Device Offline</span>
-    </div>
-
-    <!-- Command Buttons -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-      <button onclick="sendCommand('HARD_ON')" class="command-btn bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg">HARD ON</button>
-      <button onclick="sendCommand('HARD_OFF')" class="command-btn bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg">HARD OFF</button>
-      <button onclick="sendCommand('AUTO_ON')" class="command-btn bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg">AUTO ON</button>
-    </div>
-
-    <!-- Log Area -->
-    <div class="pt-6">
-      <h2 class="text-xl font-semibold text-gray-800 mb-2">System Log</h2>
-      <div id="log" class="h-48 overflow-y-scroll bg-gray-800 text-green-400 p-4 rounded-lg text-xs font-mono">
-        Waiting for WebSocket connection...
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tris Tech Hub - Building Bold Web Apps & Impactful Designs</title>
+    <link
+      rel="shortcut icon"
+      href="media/30d9f8dd-2375-48bc-b7d4-75a4e0dba2d5.jfif"
+      type="image/x-icon"
+    />
+    <!-- Google Fonts: Inter for a modern, clean look -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome CDN for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLMD5vT4H0EagYyI5V/f43R5G5N2O1G2E1K8dE7w+R4D3I3E5O6F5F5A4Z5J2U7"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <!--<link rel="stylesheet" href="css/layout.css" />-->
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+      <div class="navbar-container">
+        <a href="#home" class="navbar-brand">
+          <div class="logo">
+            <img
+              src="media//30d9f8dd-2375-48bc-b7d4-75a4e0dba2d5-removebg-preview.png"
+              alt=""
+              srcset=""
+            />
+          </div>
+          Tris Tech Hub
+        </a>
+        <button
+          class="menu-toggle"
+          id="mobile-menu"
+          aria-expanded="false"
+          aria-controls="nav-links"
+          aria-label="Toggle navigation menu"
+        >
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </button>
+        <ul class="nav-links" id="nav-links">
+          <li class="link"><a href="#home">Home</a></li>
+          <li class="link"><a href="#about">About Us</a></li>
+          <li class="link"><a href="#services">Services</a></li>
+          <li class="link"><a href="#products">Products</a></li>
+          <li class="link"><a href="#projects">Projects</a></li>
+          <li class="link"><a href="#process">Process</a></li>
+          <li class="link"><a href="#tech-stack">Stack</a></li>
+          <li class="link"><a href="#contact">Contact</a></li>
+        </ul>
       </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Home Section -->
+      <section class="home" id="home">
+        <!-- Video Background -->
+        <video autoplay loop muted playsinline class="video-background">
+          <source
+            src="media/From KlickPin CF Frontend in 2025 _ Motion backgrounds Chroma key Science tools.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+
+        <!-- Content Overlay -->
+        <div class="content-overlay">
+          <div class="home-content fade-in-up">
+            <h1>Building Flexible & Impactful Solutions.</h1>
+            <p class="delay-200">
+              We are Tris Tech Hub, transforming ideas into high-performance and
+              flexible digital solutions.
+            </p>
+            <div class="cta-group delay-400">
+              <a href="#projects" class="cta-button primary"
+                >View Projects <i class="fa-solid fa-arrow-right"></i
+              ></a>
+              <a href="#contact" class="cta-button secondary"
+                >Get a Quote <i class="fa-solid fa-file-invoice"></i
+              ></a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- About Section -->
+      <section class="about section" id="about">
+        <h2>About Tris Tech Hub</h2>
+        <p style="text-align: center; color: var(--color-text-dark)">
+          We are a dedicated team of developers and designers committed to
+          building sleek, responsive, and high-impact digital solutions. Our
+          philosophy centers on **clarity, speed, and bold aesthetics**,
+          ensuring every project stands out from the crowd.
+        </p>
+        <div class="about-stats">
+          <div class="stat-item">
+            <span class="stat-number">3+</span>
+            <p>Years Experience</p>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">10+</span>
+            <p>Projects Completed</p>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">100%</span>
+            <p>Client Satisfaction</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Services Section -->
+      <section class="services section" id="services">
+        <h2>Our Services</h2>
+        <p style="text-align: center; color: var(--color-text-dark)">
+          Digital excellence powered by precision and a neon aesthetic.
+        </p>
+        <div class="services-grid">
+          <div class="service-card">
+            <i class="fa-solid fa-code fa-2x icon-neon"></i>
+            <h3>Full-Stack Web Development</h3>
+            <p>
+              Building scalable, secure, and blazing-fast web applications using
+              modern stacks like React, Node.js, and Firebase.
+            </p>
+          </div>
+
+          <div class="service-card">
+            <i class="fa-solid fa-palette fa-2x icon-neon"></i>
+            <h3>UI/UX Design & Branding</h3>
+            <p>
+              Crafting intuitive interfaces and memorable user experiences that
+              are both beautiful and highly functional.
+            </p>
+          </div>
+          <div class="service-card">
+            <i class="fa-solid fa-mobile-screen fa-2x icon-neon"></i>
+            <h3>Responsive Design</h3>
+            <p>
+              Guaranteeing your application looks flawless and performs
+              optimally on every device and screen size.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="products section" id="products">
+        <h2>Our Products</h2>
+        <p style="text-align: center; color: var(--color-text-dark)">
+          Innovative tools crafted for the modern digital landscape.
+        </p>
+
+        <div class="products-grid">
+          <div class="product-card middle-column">
+            <div class="product-image-container">
+              <img src="media/ATS.png" alt="Product Name" />
+            </div>
+            <h3><a href="https://tristechhub.org.rw/projects/ATS/index.html">Automatic Timekeeping System</a></h3>
+          </div>
+           
+        </div>
+      </section>
+
+      <!-- Projects Section -->
+      <section class="projects section" id="projects">
+        <h2>Featured Projects</h2>
+        <div class="projects-grid">
+          <div class="project-card">
+            <h3>Project: gsobindatwa</h3>
+            <p>
+              Led the school website redesign, focusing on User Experience (UX)
+              and implementing an intuitive information architecture. Delivered
+              a fully responsive, mobile-first interface after creating
+              wireframes and a style guide.
+            </p>
+            <a
+              href="https://gsobindatwa.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="cta-link"
+              >View Project <i class="fa-solid fa-arrow-right"></i
+            ></a>
+          </div>
+          <div class="project-card">
+            <i class="fa-solid fa-music fa-2x icon-neon"></i>
+            <h3>Project: B-Web</h3>
+            <p>
+              The official Bethel Family Choir digital archive, engineered as a
+              futuristic vessel for gospel outreach and historical preservation.
+              Featuring high-contrast neon aesthetics and modern typography,
+              this platform serves as a secure, high-performance vault for the
+              choir's musical legacy and spiritual journey.
+            </p>
+            <a
+              href="https://bethelfamilychoir.infinityfreeapp.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="cta-link"
+              >Enter the Archive <i class="fa-solid fa-arrow-right"></i
+            ></a>
+          </div>
+          <!-- <div class="project-card">
+                    <i class="fa-solid fa-graduation-cap fa-lg icon-neon"></i>
+                    <h3>Project: LearnSphere</h3>
+                    <p>A modern e-learning platform with course management, video playback, and progress tracking for students and instructors.</p>
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="cta-link">View Project <i class="fa-solid fa-arrow-right"></i></a>
+                </div> -->
+        </div>
+      </section>
+
+      <!-- Process Section -->
+      <section class="process section" id="process">
+        <h2>Our Seamless Process</h2>
+        <p style="text-align: center; color: var(--color-text-dark)">
+          Clarity and collaboration at every step.
+        </p>
+        <div class="process-flow">
+          <div class="process-step">
+            <div class="step-icon">
+              <i class="fa-solid fa-lightbulb fa-2x icon-neon"></i>
+            </div>
+            <h3>1. Discovery & Planning</h3>
+            <p>
+              We define project goals, conduct research, and map out the core
+              functionality.
+            </p>
+          </div>
+          <div class="process-step">
+            <div class="step-icon">
+              <i class="fa-solid fa-pen-ruler fa-2x icon-neon"></i>
+            </div>
+            <h3>2. Design & Prototype</h3>
+            <p>
+              We craft wireframes, visual designs, and interactive prototypes
+              for your review.
+            </p>
+          </div>
+          <div class="process-step">
+            <div class="step-icon">
+              <i class="fa-solid fa-laptop-code fa-2x icon-neon"></i>
+            </div>
+            <h3>3. Development & Testing</h3>
+            <p>
+              Our team codes the application, deploying feature releases for
+              continuous feedback.
+            </p>
+          </div>
+          <div class="process-step">
+            <div class="step-icon">
+              <i class="fa-solid fa-rocket fa-2x icon-neon"></i>
+            </div>
+            <h3>4. Launch & Support</h3>
+            <p>
+              We deploy the final product, ensuring stability, followed by
+              ongoing maintenance.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tech Stack Section -->
+      <!-- Tech Stack Section -->
+      <section class="tech-stack section" id="tech-stack">
+        <h2>Our Tech Stack</h2>
+        <center><p>Modern tools for future-proof solutions.</p></center>
+        
+        <div class="tech-items-grid">
+            <!-- DESIGNING TOOLS -->
+            <div class="tech-item">
+                <i class="fa-brands fa-figma icon-neon"></i>
+                <span>Figma</span>
+            </div>
+            <div class="tech-item">
+                <i class="fa-solid fa-palette icon-neon"></i>
+                <span>Canva</span>
+            </div>
+
+            <!-- FRONTEND -->
+            <div class="tech-item">
+                <i class="fa-brands fa-react icon-neon"></i>
+                <span>React</span>
+            </div>
+            <div class="tech-item">
+                <i class="fa-brands fa-html5 icon-neon"></i>
+                <span>HTML5</span>
+            </div>
+            <div class="tech-item">
+                <i class="fa-brands fa-css3-alt icon-neon"></i>
+                <span>CSS3</span>
+            </div>
+            <div class="tech-item">
+                <i class="fa-brands fa-js icon-neon"></i>
+                <span>JavaScript</span>
+            </div>
+
+            <!-- API LANGUAGES / LANGUAGES -->
+            <div class="tech-item">
+                <i class="fa-brands fa-python icon-neon"></i>
+                <span>Python</span>
+            </div>
+            <div class="tech-item">
+                <i class="fa-solid fa-code icon-neon"></i>
+                <span>C++</span>
+            </div>
+
+            <!-- BACKEND -->
+            <div class="tech-item">
+                <i class="fa-brands fa-node-js icon-neon"></i>
+                <span>Node.js</span>
+            </div>
+            <div class="tech-item">
+                <i class="fa-solid fa-gem icon-neon"></i>
+                <span>Ruby</span>
+            </div>
+            <div class="tech-item">
+                <i class="fa-brands fa-php icon-neon"></i>
+                <span>PHP</span>
+            </div>
+
+            <!-- DATABASE / DB -->
+            <div class="tech-item">
+                <i class="fa-solid fa-database icon-neon"></i>
+                <span>PostgreSQL</span>
+            </div>
+            <div class="tech-item">
+                <i class="fa-solid fa-database icon-neon"></i>
+                <span>SQL/MySQL</span>
+            </div>
+            <div class="tech-item">
+                <i class="fa-solid fa-file icon-neon"></i>
+                <span>MongoDB/Firebase</span>
+            </div>
+            
+            <!-- TOOLS -->
+            <div class="tech-item">
+                <i class="fa-brands fa-git-alt icon-neon"></i>
+                <span>Git/GitHub</span>
+            </div>
+        </div>
+    </section>
+
+      <!-- Contact Section -->
+      <section class="contact section" id="contact">
+        <h2>Contact Us</h2>
+        <p style="text-align: center; color: var(--color-text-dark)">
+          Ready to build something amazing? Let's connect!
+        </p>
+        <div class="contact-info">
+          <div class="stat-item">
+            <span class="stat-number"
+              ><i class="fa-brands fa-whatsapp icon-neon"></i
+            ></span>
+
+            <p>+250 795 202 161</p>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number"
+              ><i class="fa-solid fa-envelope icon-neon"></i
+            ></span>
+            <p>info@tristechhub.org.rw</p>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number"
+              ><i class="fa-solid fa-phone icon-neon"></i
+            ></span>
+            <p>+250 784 912 881</p>
+          </div>
+        </div>
+      </section>
     </div>
-  </div>
-
-<script>
-  const WS_BROWSER_URL = "wss://combined-server-1fyr.onrender.com/ws/browser?email=shimo@gmail.com";
-  const CMD_URL = "https://combined-server-1fyr.onrender.com/command";
-  const DEVICE_NAME = "wemos_user";
-
-  let browserSocket;
-  const logElement = document.getElementById('log');
-  const statusDot = document.getElementById('status-dot');
-  const statusText = document.getElementById('status-text');
-
-  function updateLog(message, type = 'info') {
-    const time = new Date().toLocaleTimeString();
-    let color = 'text-green-400';
-    if (type === 'error') color = 'text-red-400';
-    if (type === 'warn') color = 'text-yellow-400';
-    if (type === 'system') color = 'text-gray-400';
-    logElement.innerHTML += `<div class="${color}">[${time}] ${message}</div>`;
-    logElement.scrollTop = logElement.scrollHeight;
-  }
-
-  // Device status indicator
-  function setDeviceOnline() {
-    document.getElementById('device-dot').classList.replace('bg-red-500','bg-green-500');
-    document.getElementById('device-text').textContent = "Device Online";
-  }
-
-  function setDeviceOffline() {
-    document.getElementById('device-dot').classList.replace('bg-green-500','bg-red-500');
-    document.getElementById('device-text').textContent = "Device Offline";
-  }
-
-  function connectBrowserWS() {
-    updateLog(`Connecting to ${WS_BROWSER_URL}...`, 'system');
-    browserSocket = new WebSocket(WS_BROWSER_URL);
-
-    browserSocket.onopen = () => {
-      statusDot.classList.replace('bg-gray-400','bg-green-500');
-      statusText.textContent = 'Connected';
-      updateLog('Browser WebSocket established.', 'info');
-    };
-
-    browserSocket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log(" // " + data)
-        if (data.type === "auto_on_trigger") {
-          updateLog(`🔔 AUTO_ON triggered for ${data.deviceName}: ${data.message}`, 'warn');
-        }
-
-        else if (data.type === "device_status") {
-          if (["CONNECTED","READY","AVAILABLE"].includes(data.status.toUpperCase())) {
-            setDeviceOnline();
-          } else {
-            setDeviceOffline();
-          }
-          updateLog(`Device ${data.deviceName} status: ${data.status}`, 'info');
-        }
-
-        else {
-          updateLog("Browser WS: " + event.data, 'system');
-        }
-
-      } catch {
-        updateLog("Browser raw: " + event.data, 'system');
-      }
-    };
-
-    browserSocket.onclose = () => {
-      statusDot.classList.replace('bg-green-500','bg-red-500');
-      statusText.textContent = 'Disconnected';
-      setDeviceOffline();
-      updateLog("Browser WebSocket closed. Retrying in 5s...", 'error');
-      setTimeout(connectBrowserWS, 5000);
-    };
-  }
-
-  async function sendCommand(command) {
-    updateLog(`Sending command: ${command}`, 'warn');
-    try {
-      const response = await fetch(CMD_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command: command, deviceName: DEVICE_NAME })
-      });
-      const data = await response.json();
-      if (data.status === "ok") updateLog(`✅ ${data.message}`, 'info');
-      else updateLog(`❌ Error: ${data.message}`, 'error');
-    } catch (err) {
-      updateLog("Network error: " + err, 'error');
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    connectBrowserWS();
-  });
-</script>
-</body>
+    <script src="javascript/index.js"></script>
+  </body>
 </html>

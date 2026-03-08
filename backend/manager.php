@@ -92,7 +92,7 @@ class User
 
         if ($result->num_rows === 1) {
             $user = $result->fetch_assoc();
-            if ($user["role"] == "Super Admin") {
+            if ($user["role"] == "Super Admin" && password_verify($passkey, $user['passkey'])) {
                 $_SESSION['logged_in'] = true;
                 $_SESSION['user_id'] = $user['id_users'];
                 $_SESSION['email'] = $user['email'];
